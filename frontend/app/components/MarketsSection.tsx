@@ -2,8 +2,10 @@
 
 import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function MarketsSection() {
+  const router = useRouter();
   const markets = [
     { city: 'Miami', state: 'FL', price: '$245.50', change: '+2.4%', volume: '$12.5M', trend: 'up' },
     { city: 'Austin', state: 'TX', price: '$189.30', change: '+1.8%', volume: '$8.3M', trend: 'up' },
@@ -62,7 +64,7 @@ export default function MarketsSection() {
                 </div>
               </div>
 
-              <button className="w-full py-3 bg-dark text-white font-medium rounded-theme-md hover:opacity-90 transition group-hover:shadow-theme-md">
+              <button onClick={() => router.push(`/markets/${market.city.toLowerCase()}`)} className="w-full py-3 bg-dark text-white font-medium rounded-theme-md hover:opacity-90 transition group-hover:shadow-theme-md">
                 View Market →
               </button>
             </div>
