@@ -6,10 +6,10 @@ import { Search } from 'lucide-react';
 interface HeroSectionProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  scrollY: number;
+  // scrollY: number;
 }
 
-export default function HeroSection({ searchQuery, setSearchQuery, scrollY }: HeroSectionProps) {
+export default function HeroSection({ searchQuery, setSearchQuery }: HeroSectionProps) {
   return (
     <div className="relative px-6 py-24 overflow-hidden">
       <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -20,7 +20,7 @@ export default function HeroSection({ searchQuery, setSearchQuery, scrollY }: He
 
         <h1 className="text-5xl md:text-6xl font-bold text-primary mb-6 leading-tight">
           Learn, Trade, and Grow
-          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600">
+          <span className="block text-transparent bg-clip-text bg-linear-to-r from-amber-600 via-orange-600 to-rose-600">
             Your Real Estate Portfolio
           </span>
         </h1>

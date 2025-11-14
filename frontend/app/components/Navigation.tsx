@@ -16,7 +16,7 @@ export default function Navigation({ userLevel, userXP, totalXP }: NavigationPro
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-200 to-orange-300 rounded-xl flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 bg-linear-to-br from-amber-200 to-orange-300 rounded-xl flex items-center justify-center shadow-md">
               <span className="text-xl">🏠</span>
             </div>
             <div>
@@ -46,7 +46,7 @@ export default function Navigation({ userLevel, userXP, totalXP }: NavigationPro
                 <div className="text-xs text-muted">Level {userLevel}</div>
                 <div className="w-24 h-1.5 bg-tertiary rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500"
+                    className="h-full bg-linear-to-r from-emerald-400 to-teal-500 transition-all duration-500"
                     style={{ width: `${xpPercentage}%` }}
                   />
                 </div>

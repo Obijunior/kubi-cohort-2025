@@ -76,14 +76,14 @@ export async function fetchMarketData(market: string): Promise<MarketData | null
       marketName: String(json.marketName ?? json.market ?? market),
       lastUpdated: json.lastUpdated ? String(json.lastUpdated) : undefined,
       kpis: Array.isArray(json.kpis)
-        ? json.kpis.map((k: any) => ({
+        ? json.kpis.map((k: Record<string, unknown>) => ({
             label: String(k.label ?? ""),
             value: k.value ?? "-",
             delta: typeof k.delta === "number" ? k.delta : null,
           }))
         : [],
       breakdown: Array.isArray(json.breakdown)
-        ? json.breakdown.map((b: any) => ({ label: String(b.label ?? ""), value: b.value ?? "-" }))
+        ? json.breakdown.map((b: Record<string, unknown>) => ({ label: String(b.label ?? ""), value: b.value ?? "-" }))
         : [],
     };
 
