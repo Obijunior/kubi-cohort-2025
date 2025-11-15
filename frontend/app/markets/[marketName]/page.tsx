@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import MarketChart from "../../components/MarketChart";
+import Navigation from "../../components/Navigation";
 
 // --- Types ---
 type KPI = { label: string; value: string | number; delta?: number | null };
@@ -111,6 +113,8 @@ export default async function MarketPage({ params }: { params: Promise<{ marketN
   const breakdown = Array.isArray(data.breakdown) && data.breakdown.length ? data.breakdown : [{ label: "No data", value: "—" }];
 
   return (
+    <div>
+      <Navigation />
     <main className="max-w-6xl mx-auto px-4 py-12">
       {/* Header */}
       <section className="mb-8">
@@ -137,21 +141,10 @@ export default async function MarketPage({ params }: { params: Promise<{ marketN
       {/* Price chart placeholder */}
       <section className="bg-white rounded-2xl border shadow-sm p-6 mb-12">
         <h2 className="text-xl font-semibold mb-4">Price Index</h2>
-        {/* Replace with actual chart (recharts / chart.js). Using a placeholder avoids chart runtime errors. */}
-        <div className="h-64 flex items-center justify-center text-gray-400">[Chart goes here]</div>
+        <MarketChart data={[{ date: "2025-10-12", pricePerSqFt: 350 }]} marketName={marketName}/>
       </section>
 
-      {/* Additional data section */}
-      <section className="bg-white rounded-2xl border shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-4">Market Breakdown</h2>
-        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-          {breakdown.map((item) => (
-            <li key={item.label}>
-              <span className="font-medium">{item.label}:</span> {String(item.value)}
-            </li>
-          ))}
-        </ul>
-      </section>
     </main>
+    </div>
   );
 }

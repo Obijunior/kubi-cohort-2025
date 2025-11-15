@@ -13,6 +13,7 @@ export default function LearnPage({ userLevel=5, userXP=34, totalXP=100 }: XP_Pr
     
   return (
     <div>
+      <Navigation />
     {/* XP and Level Indicator */}
     <div className="hidden lg:flex items-center gap-3 bg-tertiary rounded-full px-4 py-2 border border-default">
         <div className="w-8 h-8 bg-accent/20 rounded-full flex items-center justify-center text-sm font-bold text-accent">
@@ -28,7 +29,6 @@ export default function LearnPage({ userLevel=5, userXP=34, totalXP=100 }: XP_Pr
         </div>
         </div>
     </div>
-    <Navigation />
     <EducationSection />
     </div>
   );

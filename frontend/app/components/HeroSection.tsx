@@ -6,10 +6,10 @@ import { Search } from 'lucide-react';
 interface HeroSectionProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  // scrollY: number;
+  scrollY: number;
 }
 
-export default function HeroSection({ searchQuery, setSearchQuery }: HeroSectionProps) {
+export default function HeroSection({ searchQuery, setSearchQuery, scrollY }: HeroSectionProps) {
   return (
     <div className="relative px-6 py-24 overflow-hidden">
       <div className="max-w-4xl mx-auto text-center relative z-10">
