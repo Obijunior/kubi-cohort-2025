@@ -11,9 +11,7 @@ import Footer from '@/app/components/Footer';
 export default function RealEstateQuest() {
   const [searchQuery, setSearchQuery] = useState('');
   // const [scrollY, setScrollY] = useState(0);
-  const [userLevel] = useState(5);
-  const [userXP] = useState(1000);
-  const [totalXP] = useState(3000);
+
 
   // useEffect(() => {
   //   const handleScroll = () => setScrollY(window.scrollY);
@@ -30,7 +28,7 @@ export default function RealEstateQuest() {
         //scrollY={scrollY}
       />
       <MarketsSection />
-      <EducationSection />
+      {/* <EducationSection /> */}
       <TradingPanel />
       <Footer />
     </div>

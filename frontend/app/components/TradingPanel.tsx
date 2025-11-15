@@ -49,7 +49,7 @@ export default function TradingPanel() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 bg-white text-dark font-bold text-lg rounded-theme-xl hover:bg-white/90 transition shadow-theme-lg">
+            <button className="px-8 py-4 bg-white text-black font-bold text-lg rounded-theme-xl hover:bg-white/90 transition shadow-theme-lg">
               Start Trading
             </button>
             <button className="px-8 py-4 bg-white/10 backdrop-blur text-white font-bold text-lg rounded-theme-xl hover:bg-white/20 transition border border-white/20">

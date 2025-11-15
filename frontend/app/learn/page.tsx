@@ -7,9 +7,10 @@ interface XP_Props {
   totalXP: number;
 }
 
+
 export default function LearnPage({ userLevel=5, userXP=34, totalXP=100 }: XP_Props) {
     const xpPercentage = (userXP / totalXP) * 100;
-
+    
   return (
     <div>
     {/* XP and Level Indicator */}
