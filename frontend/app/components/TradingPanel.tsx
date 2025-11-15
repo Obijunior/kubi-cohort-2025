@@ -11,13 +11,13 @@ export default function TradingPanel() {
         <div className="bg-dark rounded-theme-xl p-12 text-white shadow-theme-xl">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full text-sm font-medium mb-4 border border-white/20">
-              ☕ Ready to Start?
+              ⛏️ Ready to Start?
             </div>
             <h2 className="text-4xl font-bold mb-4">
-              Begin Your Trading Journey
+              Begin Your Mineral Trading Journey
             </h2>
             <p className="text-white/70 text-lg max-w-xl mx-auto">
-              Start with just $10. Learn as you trade. Grow your portfolio with confidence.
+              Trade tokenized commodities for oil, gold, and silver. Start with just $10. Learn as you trade. Grow your portfolio with confidence.
             </p>
           </div>
 

@@ -1,0 +1,129 @@
+{
+  "info": {
+    "_postman_id": "mineral-trading-api-v1",
+    "name": "Mineral Trading API",
+    "description": "Collection for testing the Mineral Trading Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/health",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": "Check if the API server is running and healthy"
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Minerals",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/minerals",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "minerals"
+          ]
+        },
+        "description": "Get summary data for all minerals with current prices"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Oil Data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/minerals/oil",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "minerals",
+            "oil"
+          ]
+        },
+        "description": "Get oil price data with 30-day history"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Gold Data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/minerals/gold",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "minerals",
+            "gold"
+          ]
+        },
+        "description": "Get gold price data with 30-day history"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Silver Data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/minerals/silver",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "minerals",
+            "silver"
+          ]
+        },
+        "description": "Get silver price data with 30-day history"
+      },
+      "response": []
+    },
+    {
+      "name": "Test Invalid Mineral",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/minerals/platinum",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "minerals",
+            "platinum"
+          ]
+        },
+        "description": "Test error handling with invalid mineral name (should return 404)"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ]
+}

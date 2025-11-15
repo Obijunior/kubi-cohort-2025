@@ -2,21 +2,21 @@
 'use client';
 
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 interface MarketChartProps {
   data: Array<{
     date: string;
-    pricePerSqFt: number;
+    price: number;
   }>;
-  marketName: string;
+  mineralName: string;
 }
 
-export default function MarketChart({ data, marketName }: MarketChartProps) {
+export default function MarketChart({ data, mineralName }: MarketChartProps) {
   return (
     <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
       <h3 className="text-lg font-bold text-stone-900 mb-4">
-        {marketName} - Price per Sq Ft
+        {mineralName} - Price History
       </h3>
       
       <ResponsiveContainer width="100%" height={300}>
@@ -45,11 +45,11 @@ export default function MarketChart({ data, marketName }: MarketChartProps) {
               borderRadius: '8px',
               fontSize: '14px'
             }}
-            formatter={(value: number) => [`$${value.toFixed(2)}`, 'Price/Sq Ft']}
+            formatter={(value: number) => [`$${value.toFixed(2)}`, 'Price']}
           />
           <Area 
             type="monotone" 
-            dataKey="pricePerSqFt" 
+            dataKey="price" 
             stroke="#10b981" 
             strokeWidth={2}
             fill="url(#colorPrice)" 
@@ -58,9 +58,9 @@ export default function MarketChart({ data, marketName }: MarketChartProps) {
       </ResponsiveContainer>
       
       <div className="mt-4 flex items-center justify-between text-sm">
-        <span className="text-stone-600">Last 30 days</span>
+        <span className="text-stone-600">Latest data</span>
         <span className="text-emerald-600 font-medium">
-          ${data[data.length - 1]?.pricePerSqFt.toFixed(2)}/sq ft
+          ${data[data.length - 1]?.price.toFixed(2)}/unit
         </span>
       </div>
     </div>

@@ -7,12 +7,9 @@ import { useRouter } from 'next/navigation';
 export default function MarketsSection() {
   const router = useRouter();
   const markets = [
-    { city: 'Miami', state: 'FL', price: '$245.50', change: '+2.4%', volume: '$12.5M', trend: 'up' },
-    { city: 'Austin', state: 'TX', price: '$189.30', change: '+1.8%', volume: '$8.3M', trend: 'up' },
-    { city: 'Denver', state: 'CO', price: '$310.20', change: '+3.1%', volume: '$15.2M', trend: 'up' },
-    { city: 'Seattle', state: 'WA', price: '$425.80', change: '-0.5%', volume: '$22.1M', trend: 'down' },
-    { city: 'Phoenix', state: 'AZ', price: '$198.40', change: '+2.8%', volume: '$9.7M', trend: 'up' },
-    { city: 'Nashville', state: 'TN', price: '$215.60', change: '+1.9%', volume: '$7.8M', trend: 'up' },
+    { mineral: 'Oil', symbol: 'WTI', price: '$76.45', change: '+2.4%', volume: '$125.5M', trend: 'up' },
+    { mineral: 'Gold', symbol: 'XAU', price: '$2,089.30', change: '+1.8%', volume: '$83.3M', trend: 'up' },
+    { mineral: 'Silver', symbol: 'XAG', price: '$31.20', change: '+3.1%', volume: '$52.2M', trend: 'up' },
   ];
 
   return (
@@ -23,10 +20,10 @@ export default function MarketsSection() {
             📊 Live Markets
           </div>
           <h2 className="text-4xl font-bold text-primary mb-4">
-            Trending Housing Markets
+            Trending Mineral Commodities
           </h2>
           <p className="text-lg text-secondary max-w-2xl mx-auto">
-            Trade tokenized futures on the hottest real estate markets. Each token represents future housing price movements.
+            Trade tokenized futures on the world&apos;s most valuable minerals. Each token represents commodity price movements.
           </p>
         </div>
 
@@ -39,9 +36,9 @@ export default function MarketsSection() {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-2xl font-bold text-primary mb-1">
-                    {market.city}
+                    {market.mineral}
                   </h3>
-                  <p className="text-sm text-muted">{market.state}</p>
+                  <p className="text-sm text-muted">{market.symbol}</p>
                 </div>
                 <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
                   market.trend === 'up' 
@@ -64,7 +61,7 @@ export default function MarketsSection() {
                 </div>
               </div>
 
-              <button onClick={() => router.push(`/markets/${market.city.toLowerCase()}`)} className="w-full py-3 bg-dark text-white font-medium rounded-theme-md hover:opacity-90 transition group-hover:shadow-theme-md">
+              <button onClick={() => router.push(`/markets/${market.mineral.toLowerCase()}`)} className="w-full py-3 bg-dark text-white font-medium rounded-theme-md hover:opacity-90 transition group-hover:shadow-theme-md">
                 View Market →
               </button>
             </div>

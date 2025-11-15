@@ -4,50 +4,39 @@ import MarketChart from "../../components/MarketChart";
 import Navigation from "../../components/Navigation";
 
 // --- Types ---
-type KPI = { label: string; value: string | number; delta?: number | null };
-
-// Breakdown item type for market breakdown lists
-type BreakdownItem = { label: string; value: string | number };
-
 type MarketData = {
-  marketName: string;
+  mineralName: string;
   lastUpdated?: string;
-  kpis?: KPI[];
-  breakdown?: BreakdownItem[];
-  // extend with other fields as needed (priceSeries, supply, etc.)
+  priceHistory: Array<{ date: string; price: number }>;
 };
 
 // --- Mock fallback (useful for local dev / tests) ---
 const MOCK_MARKET: MarketData = {
-  marketName: '',
+  mineralName: '',
   lastUpdated: new Date().toISOString(),
-  kpis: [
-    { label: "Average Price per sq foot", value: "$350.32", delta: 2.3 },
-    { label: "Inventory", value: 120 },
-    { label: "Monthly Change", value: "-1.4%", delta: -1.4 },
-  ],
-  breakdown: [
-    { label: "Average Days on Market", value: 28 },
-    { label: "Listings", value: 512 },
+  priceHistory: [
+    { date: '2025-11-15', price: 76.45 },
+    { date: '2025-11-14', price: 74.82 },
+    { date: '2025-11-13', price: 75.30 },
   ],
 };
 
 // --- Robust fetcher ---
-export async function fetchMarketData(market: string): Promise<MarketData | null> {
+export async function fetchMarketData(mineral: string): Promise<MarketData | null> {
   const base = process.env.NEXT_PUBLIC_API_URL;
 
   // If no base URL is set, return mock data (avoid runtime null errors).
   // In production you may prefer to throw or return null instead.
   if (!base) {
-    console.warn("NEXT_PUBLIC_API_URL not set — returning MOCK_MARKET for", market);
+    console.warn("NEXT_PUBLIC_API_URL not set — returning MOCK_MARKET for", mineral);
     // If you prefer to return null so the page 404s, change this to 'return null;'
-    return { ...MOCK_MARKET, marketName: `${MOCK_MARKET.marketName} ${market.charAt(0).toUpperCase()}${market.slice(1)}` };
+    return { ...MOCK_MARKET, mineralName: `${mineral.charAt(0).toUpperCase()}${mineral.slice(1)}` };
   }
 
   let res: Response | null = null;
   try {
     // sanitize base to avoid double slashes
-    const url = `${base.replace(/\/$/, "")}/markets/${encodeURIComponent(market)}`;
+    const url = `${base.replace(/\/$/, "")}/minerals/${encodeURIComponent(mineral)}`;
     res = await fetch(url, { next: { revalidate: 60 } });
   } catch (err) {
     console.error("Fetch to API failed:", err);
@@ -55,12 +44,12 @@ export async function fetchMarketData(market: string): Promise<MarketData | null
   }
 
   if (!res) {
-    console.error("No response object received from fetch for market:", market);
+    console.error("No response object received from fetch for mineral:", mineral);
     return null;
   }
 
   if (!res.ok) {
-    console.error(`API returned non-OK status ${res.status} ${res.statusText} for ${market}`);
+    console.error(`API returned non-OK status ${res.status} ${res.statusText} for ${mineral}`);
     return null;
   }
 
@@ -69,36 +58,32 @@ export async function fetchMarketData(market: string): Promise<MarketData | null
     // In some runtimes res.json() may reject — catch below will handle it
     const json = await res.json();
     if (!json || typeof json !== "object") {
-      console.error("API returned invalid JSON shape for market:", market, json);
+      console.error("API returned invalid JSON shape for mineral:", mineral, json);
       return null;
     }
 
-    // Map/validate fields into MarketData
+    // Map/validate fields into MarketData - only expecting date/time and price
     const data: MarketData = {
-      marketName: String(json.marketName ?? json.market ?? market),
+      mineralName: String(json.mineralName ?? json.mineral ?? mineral),
       lastUpdated: json.lastUpdated ? String(json.lastUpdated) : undefined,
-      kpis: Array.isArray(json.kpis)
-        ? json.kpis.map((k: Record<string, unknown>) => ({
-            label: String(k.label ?? ""),
-            value: k.value ?? "-",
-            delta: typeof k.delta === "number" ? k.delta : null,
+      priceHistory: Array.isArray(json.priceHistory)
+        ? json.priceHistory.map((p: Record<string, unknown>) => ({
+            date: String(p.date ?? ""),
+            price: typeof p.price === "number" ? p.price : 0,
           }))
-        : [],
-      breakdown: Array.isArray(json.breakdown)
-        ? json.breakdown.map((b: Record<string, unknown>) => ({ label: String(b.label ?? ""), value: b.value ?? "-" }))
         : [],
     };
 
     return data;
   } catch (err) {
-    console.error("Failed to parse JSON from API for market:", market, err);
+    console.error("Failed to parse JSON from API for mineral:", mineral, err);
     return null;
   }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ marketName: string }> }): Promise<Metadata> {
   const { marketName } = await params;
-  return { title: `${marketName} Market | Web3 Real Estate` };
+  return { title: `${marketName} | Mineral Trading` };
 }
 
 export default async function MarketPage({ params }: { params: Promise<{ marketName: string }> }) {
@@ -109,8 +94,13 @@ export default async function MarketPage({ params }: { params: Promise<{ marketN
   if (!data) return notFound();
 
   // Defensive defaults for rendering
-  const kpis = Array.isArray(data.kpis) && data.kpis.length ? data.kpis : [{ label: "No KPIs", value: "—" }];
-  const breakdown = Array.isArray(data.breakdown) && data.breakdown.length ? data.breakdown : [{ label: "No data", value: "—" }];
+  const priceHistory = Array.isArray(data.priceHistory) && data.priceHistory.length 
+    ? data.priceHistory 
+    : [{ date: new Date().toISOString().split('T')[0], price: 0 }];
+
+  const currentPrice = priceHistory[priceHistory.length - 1]?.price ?? 0;
+  const previousPrice = priceHistory[priceHistory.length - 2]?.price ?? currentPrice;
+  const priceChange = ((currentPrice - previousPrice) / previousPrice) * 100;
 
   return (
     <div>
@@ -118,30 +108,42 @@ export default async function MarketPage({ params }: { params: Promise<{ marketN
     <main className="max-w-6xl mx-auto px-4 py-12">
       {/* Header */}
       <section className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">{data.marketName}</h1>
+        <h1 className="text-4xl font-bold mb-2">{data.mineralName}</h1>
         <p className="text-gray-500">Updated: {data.lastUpdated ?? "Unknown"}</p>
       </section>
 
-      {/* KPI cards */}
+      {/* Key Stats Card */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {kpis.map((kpi) => (
-          <div key={kpi.label} className="p-6 bg-white rounded-2xl shadow-sm border">
-            <div className="text-gray-600 text-sm">{kpi.label}</div>
-            <div className="text-2xl font-semibold mt-2">{String(kpi.value)}</div>
-            {typeof kpi.delta === "number" && (
-              <div className={"mt-1 text-sm " + (kpi.delta > 0 ? "text-green-600" : "text-red-600")}>
-                {kpi.delta > 0 ? "+" : ""}
-                {kpi.delta}%
-              </div>
-            )}
+        <div className="p-6 bg-white rounded-2xl shadow-sm border">
+          <div className="text-gray-600 text-sm">Current Price</div>
+          <div className="text-2xl font-semibold mt-2">${currentPrice.toFixed(2)}</div>
+          <div className={"mt-1 text-sm " + (priceChange > 0 ? "text-green-600" : "text-red-600")}>
+            {priceChange > 0 ? "+" : ""}
+            {priceChange.toFixed(2)}%
           </div>
-        ))}
+        </div>
+
+        <div className="p-6 bg-white rounded-2xl shadow-sm border">
+          <div className="text-gray-600 text-sm">Lowest Price</div>
+          <div className="text-2xl font-semibold mt-2">
+            ${Math.min(...priceHistory.map(p => p.price)).toFixed(2)}
+          </div>
+          <div className="mt-1 text-sm text-gray-500">Last 30 days</div>
+        </div>
+
+        <div className="p-6 bg-white rounded-2xl shadow-sm border">
+          <div className="text-gray-600 text-sm">Highest Price</div>
+          <div className="text-2xl font-semibold mt-2">
+            ${Math.max(...priceHistory.map(p => p.price)).toFixed(2)}
+          </div>
+          <div className="mt-1 text-sm text-gray-500">Last 30 days</div>
+        </div>
       </section>
 
-      {/* Price chart placeholder */}
+      {/* Price chart */}
       <section className="bg-white rounded-2xl border shadow-sm p-6 mb-12">
-        <h2 className="text-xl font-semibold mb-4">Price Index</h2>
-        <MarketChart data={[{ date: "2025-10-12", pricePerSqFt: 350 }]} marketName={marketName}/>
+        <h2 className="text-xl font-semibold mb-4">Price History</h2>
+        <MarketChart data={priceHistory} mineralName={data.mineralName}/>
       </section>
 
     </main>
