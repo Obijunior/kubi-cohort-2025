@@ -10,24 +10,24 @@ import Footer from '@/app/components/Footer';
 
 export default function RealEstateQuest() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [scrollY, setScrollY] = useState(0);
-  const [userLevel] = useState(7);
-  const [userXP] = useState(2840);
+  // const [scrollY, setScrollY] = useState(0);
+  const [userLevel] = useState(5);
+  const [userXP] = useState(1000);
   const [totalXP] = useState(3000);
 
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // useEffect(() => {
+  //   const handleScroll = () => setScrollY(window.scrollY);
+  //   window.addEventListener('scroll', handleScroll);
+  //   return () => window.removeEventListener('scroll', handleScroll);
+  // }, []);
 
   return (
     <div className="min-h-screen bg-primary">
-      <Navigation userLevel={userLevel} userXP={userXP} totalXP={totalXP} />
+      <Navigation  />
       <HeroSection 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        scrollY={scrollY}
+        //scrollY={scrollY}
       />
       <MarketsSection />
       <EducationSection />

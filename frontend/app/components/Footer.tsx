@@ -12,7 +12,7 @@ export default function Footer() {
               <div className="w-10 h-10 bg-accent rounded-theme-md flex items-center justify-center">
                 <span className="text-xl">🏠</span>
               </div>
-              <span className="text-xl font-bold">RealQuest</span>
+              <span className="text-xl font-bold">TerraNova</span>
             </div>
             <p className="text-sm text-white/60">
               Learn, trade, and grow your real estate portfolio through tokenized futures.
@@ -49,7 +49,15 @@ export default function Footer() {
         
         <div className="border-t border-white/10 pt-8 text-center text-sm text-white/60">
           <p className="mb-2">Trading and investing involve substantial risk. Past performance is not indicative of future results.</p>
-          <p>© 2025 RealQuest, Inc. Made with care.</p>
+          <br></br>
+          <ul className='columns-6'>
+            <li>Made with ❤️ by </li>
+            <li>Henry</li>
+            <li>Sneha</li>
+            <li>Matthew</li>
+            <li>Abhi</li>
+            <li>Ouji</li>
+          </ul>
         </div>
       </div>
     </footer>

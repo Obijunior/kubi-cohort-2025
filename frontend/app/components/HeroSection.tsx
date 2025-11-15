@@ -42,20 +42,6 @@ export default function HeroSection({ searchQuery, setSearchQuery }: HeroSection
             />
           </div>
         </div>
-
-        <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto">
-          {[
-            { label: 'Total Volume', value: '$2.5B', icon: '💰' },
-            { label: 'Active Traders', value: '50K+', icon: '👥' },
-            { label: 'Markets', value: '120+', icon: '🏘️' }
-          ].map((stat, idx) => (
-            <div key={idx} className="bg-secondary rounded-xl p-6 border border-default shadow-sm hover:shadow-md transition">
-              <div className="text-3xl mb-2">{stat.icon}</div>
-              <div className="text-2xl font-bold text-primary mb-1">{stat.value}</div>
-              <div className="text-sm text-muted">{stat.label}</div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );

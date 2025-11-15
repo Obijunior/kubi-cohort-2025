@@ -22,7 +22,7 @@ export default function AchievementsSidebar() {
               key={idx}
               className={`flex items-center gap-3 p-3 rounded-xl transition ${
                 achievement.unlocked 
-                  ? 'bg-gradient-to-r from-green-100 to-blue-100' 
+                  ? 'bg-linear-to-r from-green-100 to-blue-100' 
                   : 'bg-gray-100 opacity-50'
               }`}
             >
@@ -37,7 +37,7 @@ export default function AchievementsSidebar() {
             </div>
           ))}
         </div>
-        <button className="w-full mt-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold hover:shadow-lg transform hover:scale-105 transition">
+        <button className="w-full mt-4 py-3 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold hover:shadow-lg transform hover:scale-105 transition">
           View All Rewards
         </button>
       </div>
