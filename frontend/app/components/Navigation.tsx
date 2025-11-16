@@ -3,12 +3,28 @@
 import React from 'react';
 import Link from 'next/link';
 import WalletConnector from './WalletConnector';
-
+import WalletModal from './WalletModal';
 
 
 export default function Navigation() {
+  const [isWalletModalOpen, setIsWalletModalOpen] = React.useState(false);
+  const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
+
+  const handleConnectWallet = (address: string) => {
+    setWalletAddress(address);
+    setIsWalletModalOpen(false);
+  };
+
+  const handleDisconnect = () => {
+    setWalletAddress(null);
+  };
+
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   return (
+    <>
     <nav className="sticky top-0 z-50 backdrop-blur-md bg-secondary/80 border-b border-default shadow-sm">
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
@@ -34,13 +50,35 @@ export default function Navigation() {
             </a>
           </div>
 
+           {walletAddress ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-emerald-700">
+                      {formatAddress(walletAddress)}
+                    </span>
+                  </div>
+                  <button 
+                    onClick={handleDisconnect}
+                    className="px-4 py-2 text-stone-600 hover:text-stone-900 text-sm font-medium transition"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
+
           <div className="flex items-center gap-4">
-            <WalletConnector onClick={() => alert('Connect Wallet clicked!')} />
-
-
+            <WalletConnector onClick={() => setIsWalletModalOpen(true)} />
           </div>
+          )}
         </div>
       </div>
     </nav>
+    <WalletModal
+      isOpen={isWalletModalOpen}
+      onClose={() => setIsWalletModalOpen(false)}
+      onConnect={handleConnectWallet}
+    />
+    </>
   );
 }
