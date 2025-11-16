@@ -26,7 +26,7 @@ export default function MarketsPage() {
       volume: '$125.5M',
       trend: 'up',
       description: 'West Texas Intermediate crude oil futures',
-      icon: '🛢️'
+      icon: ''
     },
     {
       id: 'gold',
@@ -37,7 +37,7 @@ export default function MarketsPage() {
       volume: '$83.3M',
       trend: 'up',
       description: 'Precious metal commodity futures',
-      icon: '🏆'
+      icon: ''
     },
     {
       id: 'silver',
@@ -48,7 +48,7 @@ export default function MarketsPage() {
       volume: '$52.2M',
       trend: 'up',
       description: 'Industrial and precious metal futures',
-      icon: '💎'
+      icon: ''
     }
   ];
 
@@ -107,8 +107,11 @@ export default function MarketsPage() {
                 {/* Card Header */}
                 <div className="p-6 border-b border-stone-100 bg-linear-to-r from-stone-50 to-transparent">
                   <div className="flex items-start justify-between mb-3">
-                    <div className="text-5xl">{mineral.icon}</div>
-                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                    <div>
+                      <h3 className="text-2xl font-bold text-primary">{mineral.name}</h3>
+                      <p className="text-sm text-secondary">{mineral.symbol}</p>
+                    </div>
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
                       mineral.trend === 'up'
                         ? 'bg-green-100 text-green-700'
                         : 'bg-red-100 text-red-700'
@@ -121,8 +124,6 @@ export default function MarketsPage() {
                       {mineral.change > 0 ? '+' : ''}{mineral.change}%
                     </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-primary">{mineral.name}</h3>
-                  <p className="text-sm text-secondary">{mineral.symbol}</p>
                 </div>
 
                 {/* Card Body */}
@@ -160,7 +161,7 @@ export default function MarketsPage() {
                 {/* Card Footer */}
                 <Link
                   href={`/markets/${mineral.id}`}
-                  className="flex w-full px-6 py-3 bg-primary text-white font-semibold text-center group-hover:bg-opacity-90 transition-all duration-200 items-center justify-center gap-2"
+                  className="flex w-full px-6 py-3 bg-primary text-secondary font-semibold text-center group-hover:bg-opacity-90 transition-all duration-200 items-center justify-center gap-2"
                 >
                   View Details
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -217,7 +218,7 @@ export default function MarketsPage() {
         {/* Info Banner */}
         <section className="mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6">
           <div className="flex gap-4">
-            <div className="text-2xl">ℹ️</div>
+            <div className="text-xl font-bold text-blue-900">ⓘ</div>
             <div>
               <h4 className="font-semibold text-blue-900 mb-1">Real-Time Data</h4>
               <p className="text-sm text-blue-800">

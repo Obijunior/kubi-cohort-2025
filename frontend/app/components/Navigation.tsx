@@ -39,15 +39,15 @@ export default function Navigation() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            <a href="/markets" className="text-sm font-medium text-secondary hover:text-primary transition">
+            <Link href="/markets" className="text-sm font-medium text-secondary hover:text-primary transition">
               Markets
-            </a>
-            <a href="/learn" className="text-sm font-medium text-secondary hover:text-primary transition">
+            </Link>
+            <Link href="/learn" className="text-sm font-medium text-secondary hover:text-primary transition">
               Learn
-            </a>
-            <a href="#trade" className="text-sm font-medium text-secondary hover:text-primary transition">
+            </Link>
+            <Link href="/trade" className="text-sm font-medium text-secondary hover:text-primary transition">
               Trade
-            </a>
+            </Link>
           </div>
 
            {walletAddress ? (
