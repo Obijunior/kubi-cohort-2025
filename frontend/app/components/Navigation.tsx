@@ -39,10 +39,10 @@ export default function Navigation() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            <a href="#markets" className="text-sm font-medium text-secondary hover:text-primary transition">
+            <a href="/markets" className="text-sm font-medium text-secondary hover:text-primary transition">
               Markets
             </a>
-            <a href="learn" className="text-sm font-medium text-secondary hover:text-primary transition">
+            <a href="/learn" className="text-sm font-medium text-secondary hover:text-primary transition">
               Learn
             </a>
             <a href="#trade" className="text-sm font-medium text-secondary hover:text-primary transition">
