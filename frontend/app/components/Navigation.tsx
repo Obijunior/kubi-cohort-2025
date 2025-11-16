@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import WalletConnector from './WalletConnector';
 
 
 
@@ -34,11 +35,9 @@ export default function Navigation() {
           </div>
 
           <div className="flex items-center gap-4">
+            <WalletConnector onClick={() => alert('Connect Wallet clicked!')} />
 
 
-            <button className="px-5 py-2 bg-dark text-white text-sm font-medium rounded-lg hover:opacity-90 transition shadow-sm">
-              Connect Wallet
-            </button>
           </div>
         </div>
       </div>
