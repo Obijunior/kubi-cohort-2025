@@ -48,7 +48,7 @@ export default function EducationSection() {
             📚 Learn & Earn
           </div>
           <div>
-            <XpIndicator userLevel={3} userXP={75} totalXP={200} />
+            {/* <XpIndicator userLevel={3} userXP={75} totalXP={200} /> */}
           </div>
           <h2 className="text-4xl font-bold text-primary mb-4">
             Educational Pathway

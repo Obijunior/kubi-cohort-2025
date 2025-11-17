@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Search, Building2, TrendingUp, Plus } from 'lucide-react';
 import Navigation from '@/app/components/Navigation';
+import TokenizeAsset from '@/app/components/TokenizeAsset';
 
 type MineralPool = {
   id: string;
@@ -157,10 +158,9 @@ export default function TradePage() {
                 <h2 className="text-2xl font-bold text-primary">Your Tokenized Assets</h2>
                 <p className="text-secondary mt-1">Create and manage RWA tokens</p>
               </div>
-              <button className="flex items-center gap-2 px-6 py-3 bg-accent text-white rounded-lg hover:bg-opacity-90 transition-all font-semibold">
-                <Plus className="w-5 h-5" />
-                Tokenize Asset
-              </button>
+              <div className="hover:bg-opacity-90 transition-rounded-lg">
+            <TokenizeAsset />
+            </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

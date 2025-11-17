@@ -15,11 +15,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
+    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "express": "^4.21.2",
+    "xrpl": "^4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^24.10.1",
     "nodemon": "^3.0.1"
   }
 }
