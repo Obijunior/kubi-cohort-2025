@@ -2,10 +2,11 @@
   "name": "mineral-trading-backend",
   "version": "1.0.0",
   "description": "Backend API for mineral trading platform",
-  "main": "server.js",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "npm run build && node dist/index.js",
+    "build": "tsc",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
   },
   "keywords": [
     "api",
@@ -15,14 +16,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^2.2.0",
+    "body-parser": "^1.20.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.21.2",
-    "xrpl": "^4.4.3"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "xrpl": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
-    "nodemon": "^3.0.1"
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/node": "^20.14.2",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
   }
 }

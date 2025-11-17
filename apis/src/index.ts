@@ -1,49 +1,65 @@
-import express from "express";
-import bodyParser from "body-parser";
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import 'dotenv/config';
 
-import { onboardCompany, mintToken } from "./controllers/companyController";
-import { createPool, buyTokens, sellTokens, getPools } from "./controllers/poolController";
-import { getUserBalances, createOffer } from "./controllers/userController";
-import { connectXRPL, disconnectXRPL } from "./services/xrplService";
+import mineralRoutes from './routes/minerals';
 
 const app = express();
-app.use(bodyParser.json());
+const PORT = process.env.PORT || 5000;
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
 
-// ----------------------
-// Company routes
-// ----------------------
-app.post("/company/onboard", onboardCompany);
-app.post("/company/mintToken", mintToken);
+// Middleware
+app.use(cors({
+  origin: CORS_ORIGIN,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(express.json());
 
-// ----------------------
-// Pool routes
-// ----------------------
-app.post("/pool/create", createPool);
-app.get("/pool/list", getPools);
-app.post("/pool/buy", buyTokens);
-app.post("/pool/sell", sellTokens);
+// Logging middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  console.log(`📍 ${req.method} ${req.path}`);
+  next();
+});
 
-// ----------------------
-// User routes
-// ----------------------
-app.get("/user/:address/balances", getUserBalances);
-app.post("/user/create-offer", createOffer);
+// Routes
+app.use('/minerals', mineralRoutes);
 
-const PORT = 4000;
-
-// Connect to XRPL before starting server
-connectXRPL()
-  .then(() => {
-    console.log("Connected to XRPL");
-    app.listen(PORT, () => console.log(`XRPL backend running on port ${PORT}`));
-  })
-  .catch((error) => {
-    console.error("Failed to connect to XRPL:", error);
-    process.exit(1);
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
+});
 
-// Graceful shutdown
-process.on("SIGINT", async () => {
-  await disconnectXRPL();
-  process.exit(0);
+// 404 handler
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    error: 'Route not found',
+    path: req.path,
+    method: req.method
+  });
+});
+
+// Error handler
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('❌ Error:', err);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+app.listen(PORT, () => {
+  console.log('\n========================================');
+  console.log('🚀 Mineral Trading Backend Started');
+  console.log('========================================');
+  console.log(`📍 Server: http://localhost:${PORT}`);
+  console.log(`📊 Minerals API: http://localhost:${PORT}/minerals`);
+  console.log(`💚 Health Check: http://localhost:${PORT}/health`);
+  console.log(`🔗 CORS Origin: ${CORS_ORIGIN}`);
+  console.log('========================================\n');
 });

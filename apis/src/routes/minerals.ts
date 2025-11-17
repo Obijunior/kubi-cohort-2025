@@ -1,6 +1,7 @@
-const express = require('express');
-const router = express.Router();
-const mineralController = require('../controllers/mineralController');
+import { Router } from 'express';
+import * as mineralController from '../controllers/mineralController';
+
+const router = Router();
 
 // GET all minerals
 router.get('/', mineralController.getAllMinerals);
@@ -8,4 +9,4 @@ router.get('/', mineralController.getAllMinerals);
 // GET specific mineral data
 router.get('/:mineralName', mineralController.getMineralData);
 
-module.exports = router;
+export default router;
