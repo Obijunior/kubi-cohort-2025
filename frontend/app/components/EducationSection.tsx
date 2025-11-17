@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { BookOpen, Award, Target, Zap } from 'lucide-react';
+import XpIndicator from './XpIndicator';
 
 export default function EducationSection() {
   const lessons = [
@@ -46,11 +47,14 @@ export default function EducationSection() {
           <div className="inline-flex items-center gap-2 bg-accent-tertiary/10 text-accent-tertiary px-4 py-2 rounded-full text-sm font-medium mb-4 border border-accent-tertiary/20">
             📚 Learn & Earn
           </div>
+          <div>
+            <XpIndicator userLevel={3} userXP={75} totalXP={200} />
+          </div>
           <h2 className="text-4xl font-bold text-primary mb-4">
             Educational Pathway
           </h2>
           <p className="text-lg text-secondary max-w-2xl mx-auto">
-            Complete lessons to unlock trading features and earn XP. Learn at your own pace in our lofi study environment.
+            Complete lessons to unlock trading features and earn XP.
           </p>
         </div>
 
