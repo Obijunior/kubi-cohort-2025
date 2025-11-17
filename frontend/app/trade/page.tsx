@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, Search, Building2, TrendingUp, Plus } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Search, Building2, TrendingUp } from 'lucide-react';
 import Navigation from '@/app/components/Navigation';
 import TokenizeAsset from '@/app/components/TokenizeAsset';
+import { useWallet } from '@/app/context/WalletContext';
 
 type MineralPool = {
   id: string;
@@ -29,8 +30,8 @@ type UserPosition = {
 };
 
 export default function TradePage() {
+  const { isConnected: walletConnected } = useWallet();
   const [activeView, setActiveView] = useState<'company' | 'trader'>('trader');
-  const [walletConnected, setWalletConnected] = useState(false);
   const [selectedPool, setSelectedPool] = useState<MineralPool | null>(null);
   const [tradeAmount, setTradeAmount] = useState('');
   const [searchQuery, setSearchQuery] = useState('');

@@ -55,13 +55,13 @@ export default function WalletModal({ isOpen, onClose, onConnect }: WalletModalP
       type: 'solana',
       detectFunction: 'phantom'
     },
-    {
-      name: 'Coinbase Wallet',
-      icon: '🔵',
-      description: 'Connect with Coinbase Wallet',
-      type: 'evm',
-      detectFunction: 'coinbaseWallet'
-    },
+    // {
+    //   name: 'Coinbase Wallet',
+    //   icon: '🔵',
+    //   description: 'Connect with Coinbase Wallet',
+    //   type: 'evm',
+    //   detectFunction: 'coinbaseWallet'
+    // },
   ];
 
   const connectMetaMask = async () => {

@@ -4,19 +4,16 @@ import React from 'react';
 import Link from 'next/link';
 import WalletConnector from './WalletConnector';
 import WalletModal from './WalletModal';
+import { useWallet } from '@/app/context/WalletContext';
 
 
 export default function Navigation() {
+  const { isConnected, walletAddress, connectWallet, disconnectWallet } = useWallet();
   const [isWalletModalOpen, setIsWalletModalOpen] = React.useState(false);
-  const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
 
   const handleConnectWallet = (address: string) => {
-    setWalletAddress(address);
+    connectWallet(address);
     setIsWalletModalOpen(false);
-  };
-
-  const handleDisconnect = () => {
-    setWalletAddress(null);
   };
 
   const formatAddress = (address: string) => {
@@ -50,7 +47,7 @@ export default function Navigation() {
             </Link>
           </div>
 
-           {walletAddress ? (
+           {isConnected && walletAddress ? (
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
@@ -59,7 +56,7 @@ export default function Navigation() {
                     </span>
                   </div>
                   <button 
-                    onClick={handleDisconnect}
+                    onClick={disconnectWallet}
                     className="px-4 py-2 text-stone-600 hover:text-stone-900 text-sm font-medium transition"
                   >
                     Disconnect
