@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Search, Building2, TrendingUp, Plus } from 'lucide-react';
 import Navigation from '@/app/components/Navigation';
 
 type MineralPool = {
@@ -28,6 +28,7 @@ type UserPosition = {
 };
 
 export default function TradePage() {
+  const [activeView, setActiveView] = useState<'company' | 'trader'>('trader');
   const [walletConnected, setWalletConnected] = useState(false);
   const [selectedPool, setSelectedPool] = useState<MineralPool | null>(null);
   const [tradeAmount, setTradeAmount] = useState('');
@@ -107,195 +108,338 @@ export default function TradePage() {
       <Navigation />
 
       <main className="max-w-7xl mx-auto px-4 py-12">
-        {/* Header */}
+        {/* Header with View Toggle */}
         <section className="mb-8">
-          <div className="flex justify-between items-center">
-            <div className="mb-6">
-              <h1 className="text-4xl font-bold text-primary mb-2">Trading Dashboard</h1>
-              <p className="text-lg text-secondary">Trade tokenized mineral commodities</p>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-primary mb-2">
+                {activeView === 'company' ? 'Company Dashboard' : 'Trading Dashboard'}
+              </h1>
+              <p className="text-lg text-secondary">
+                {activeView === 'company' 
+                  ? 'Tokenize and manage your real-world assets' 
+                  : 'Trade tokenized mineral commodities'}
+              </p>
             </div>
-            {!walletConnected ? (
+            <div className="flex gap-2">
               <button
-                onClick={() => setWalletConnected(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-accent text-white rounded-lg hover:bg-opacity-90 transition-all duration-200 font-semibold"
+                onClick={() => setActiveView('company')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                  activeView === 'company'
+                    ? 'bg-accent text-white'
+                    : 'bg-white text-primary border border-stone-200 hover:border-stone-300'
+                }`}
               >
-                <Wallet className="w-5 h-5" />
-                Connect Wallet
+                <Building2 className="w-4 h-4" />
+                Company
               </button>
-            ) : (
-              <div className="px-6 py-3 bg-green-100 border border-green-300 rounded-lg text-green-700 text-sm font-medium">
-                ✓ Connected: 0x742d...3f8a
+              <button
+                onClick={() => setActiveView('trader')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                  activeView === 'trader'
+                    ? 'bg-accent text-white'
+                    : 'bg-white text-primary border border-stone-200 hover:border-stone-300'
+                }`}
+              >
+                <TrendingUp className="w-4 h-4" />
+                Trader
+              </button>
+
+            </div>
+          </div>
+        </section>
+
+        {/* Company Dashboard View */}
+        {activeView === 'company' ? (
+          <div className="space-y-8">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-primary">Your Tokenized Assets</h2>
+                <p className="text-secondary mt-1">Create and manage RWA tokens</p>
               </div>
-            )}
-          </div>
-        </section>
+              <button className="flex items-center gap-2 px-6 py-3 bg-accent text-white rounded-lg hover:bg-opacity-90 transition-all font-semibold">
+                <Plus className="w-5 h-5" />
+                Tokenize Asset
+              </button>
+            </div>
 
-        {/* Portfolio Stats */}
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-            <p className="text-sm text-secondary mb-2">Portfolio Value</p>
-            <p className="text-3xl font-bold text-primary">${portfolioValue.toFixed(2)}</p>
-          </div>
-          <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-            <p className="text-sm text-secondary mb-2">Total P&L</p>
-            <p className="text-3xl font-bold text-green-600">
-              ${totalPnL.toFixed(2)}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-            <p className="text-sm text-secondary mb-2">Active Positions</p>
-            <p className="text-3xl font-bold text-primary">{userPositions.length}</p>
-          </div>
-          <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-            <p className="text-sm text-secondary mb-2">24h Change</p>
-            <p className="text-3xl font-bold text-green-600">+{totalPnLPercent.toFixed(2)}%</p>
-          </div>
-        </section>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
+                <p className="text-sm text-secondary mb-2">Total Assets</p>
+                <p className="text-3xl font-bold text-primary">3</p>
+              </div>
+              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
+                <p className="text-sm text-secondary mb-2">Total Pool Liquidity</p>
+                <p className="text-3xl font-bold text-primary">$5.5M</p>
+              </div>
+              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
+                <p className="text-sm text-secondary mb-2">Total Fees Earned</p>
+                <p className="text-3xl font-bold text-green-600">$12,450</p>
+              </div>
+            </div>
 
-        {/* Your Positions */}
-        {userPositions.length > 0 && (
-          <section className="mb-8">
             <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
               <div className="p-6 border-b border-stone-100">
-                <h2 className="text-2xl font-bold text-primary">Your Positions</h2>
+                <h3 className="text-xl font-bold text-primary">Your Assets & Trading Pools</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-stone-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Asset</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Entry Price</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Current Price</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">P&L</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Total Supply</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Pool Liquidity</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Volume</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Fees Earned</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-200">
-                    {userPositions.map(position => (
-                      <tr key={position.id} className="hover:bg-stone-50 transition-colors">
-                        <td className="px-6 py-4 font-semibold text-primary">{position.symbol}</td>
-                        <td className="px-6 py-4 text-primary">{position.amount.toLocaleString()}</td>
-                        <td className="px-6 py-4 text-primary">${position.entryPrice.toFixed(2)}</td>
-                        <td className="px-6 py-4 text-primary">${position.currentPrice.toFixed(2)}</td>
-                        <td className="px-6 py-4">
-                          <div className="text-green-600">
-                            <div className="font-semibold">${position.pnl.toFixed(2)}</div>
-                            <div className="text-xs">+{position.pnlPercent.toFixed(2)}%</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <button className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
-                            Close
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    <tr className="hover:bg-stone-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-primary">WTI</div>
+                        <div className="text-sm text-secondary">Oil</div>
+                      </td>
+                      <td className="px-6 py-4 text-primary">1,000,000</td>
+                      <td className="px-6 py-4 text-primary">$2.5M</td>
+                      <td className="px-6 py-4 text-primary">$125.5M</td>
+                      <td className="px-6 py-4 font-semibold text-green-600">$6,200</td>
+                      <td className="px-6 py-4">
+                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
+                          Manage
+                        </button>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-stone-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-primary">XAU</div>
+                        <div className="text-sm text-secondary">Gold</div>
+                      </td>
+                      <td className="px-6 py-4 text-primary">500,000</td>
+                      <td className="px-6 py-4 text-primary">$1.8M</td>
+                      <td className="px-6 py-4 text-primary">$83.3M</td>
+                      <td className="px-6 py-4 font-semibold text-green-600">$3,950</td>
+                      <td className="px-6 py-4">
+                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
+                          Manage
+                        </button>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-stone-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-primary">XAG</div>
+                        <div className="text-sm text-secondary">Silver</div>
+                      </td>
+                      <td className="px-6 py-4 text-primary">2,000,000</td>
+                      <td className="px-6 py-4 text-primary">$1.2M</td>
+                      <td className="px-6 py-4 text-primary">$52.2M</td>
+                      <td className="px-6 py-4 font-semibold text-green-600">$2,300</td>
+                      <td className="px-6 py-4">
+                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
+                          Manage
+                        </button>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
             </div>
-          </section>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+              <div className="flex gap-4">
+                <div className="text-xl font-bold text-blue-900">ⓘ</div>
+                <div>
+                  <h4 className="font-semibold text-blue-900 mb-1">How Asset Leasing Works</h4>
+                  <p className="text-sm text-blue-800">
+                    Tokenize your physical assets and create liquidity pools. Traders will trade against your pools, 
+                    and you earn fees from every transaction while retaining full ownership of the underlying assets.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Trader Dashboard */}
+
+            {/* Portfolio Stats */}
+            <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
+                <p className="text-sm text-secondary mb-2">Portfolio Value</p>
+                <p className="text-3xl font-bold text-primary">${portfolioValue.toFixed(2)}</p>
+              </div>
+              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
+                <p className="text-sm text-secondary mb-2">Total P&L</p>
+                <p className="text-3xl font-bold text-green-600">
+                  ${totalPnL.toFixed(2)}
+                </p>
+              </div>
+              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
+                <p className="text-sm text-secondary mb-2">Active Positions</p>
+                <p className="text-3xl font-bold text-primary">{userPositions.length}</p>
+              </div>
+              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
+                <p className="text-sm text-secondary mb-2">24h Change</p>
+                <p className="text-3xl font-bold text-green-600">+{totalPnLPercent.toFixed(2)}%</p>
+              </div>
+            </section>
+
+            {/* Your Positions */}
+            {userPositions.length > 0 && (
+              <section className="mb-8">
+                <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-stone-100">
+                    <h2 className="text-2xl font-bold text-primary">Your Positions</h2>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-stone-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Asset</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Amount</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Entry Price</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Current Price</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">P&L</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-200">
+                        {userPositions.map(position => (
+                          <tr key={position.id} className="hover:bg-stone-50 transition-colors">
+                            <td className="px-6 py-4 font-semibold text-primary">{position.symbol}</td>
+                            <td className="px-6 py-4 text-primary">{position.amount.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-primary">${position.entryPrice.toFixed(2)}</td>
+                            <td className="px-6 py-4 text-primary">${position.currentPrice.toFixed(2)}</td>
+                            <td className="px-6 py-4">
+                              <div className="text-green-600">
+                                <div className="font-semibold">${position.pnl.toFixed(2)}</div>
+                                <div className="text-xs">+{position.pnlPercent.toFixed(2)}%</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <button className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+                                Close
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Available Trading Pools */}
+            <section>
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-stone-100 flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold text-primary mb-1">Available Markets</h2>
+                    <p className="text-sm text-secondary">Trade tokenized mineral commodities</p>
+                  </div>
+                  <div className="relative w-64">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search by name or symbol..."
+                      className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-accent focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-stone-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Asset</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Type</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Price</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Change</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Volume</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Liquidity</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Fee</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-200">
+                      {filteredPools.map(pool => (
+                        <tr key={pool.id} className="hover:bg-stone-50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-semibold text-primary">{pool.symbol}</div>
+                            <div className="text-sm text-secondary">{pool.name}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium">
+                              {pool.type}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 font-semibold text-primary">${pool.price.toFixed(2)}</td>
+                          <td className="px-6 py-4">
+                            <div className={`flex items-center gap-1 font-medium ${
+                              pool.change24h >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {pool.change24h >= 0 ? (
+                                <ArrowUpRight className="w-4 h-4" />
+                              ) : (
+                                <ArrowDownRight className="w-4 h-4" />
+                              )}
+                              <span>{pool.change24h >= 0 ? '+' : ''}{pool.change24h}%</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-primary">{pool.volume24h}</td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className="font-semibold text-primary">{pool.liquidity}</div>
+                              <div className="text-xs text-secondary">{pool.tokensInPool.toLocaleString()} tokens</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-primary font-medium">{pool.tradingFee}</td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => setSelectedPool(pool)}
+                              disabled={!walletConnected}
+                              className="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-opacity-90 transition-all font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            >
+                              Trade
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+
+            {/* Risk Disclaimer */}
+            <section className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
+              <div className="flex gap-4">
+                <div className="text-xl font-bold text-blue-900">ⓘ</div>
+                <div>
+                  <h4 className="font-semibold text-blue-900 mb-1">Trading Risk Disclosure</h4>
+                  <p className="text-sm text-blue-800">
+                    Mineral commodity trading involves substantial risk and is not suitable for all investors. 
+                    Prices are volatile and can fluctuate rapidly. Only trade with capital you can afford to lose.
+                    Past performance does not guarantee future results.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
         )}
-
-        {/* Available Trading Pools */}
-        <section>
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-stone-100 flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-primary mb-1">Available Markets</h2>
-                <p className="text-sm text-secondary">Trade tokenized mineral commodities</p>
-              </div>
-              <div className="relative w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name or symbol..."
-                  className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-accent focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-stone-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Asset</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Price</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Change</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Volume</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Liquidity</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Fee</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-200">
-                  {filteredPools.map(pool => (
-                    <tr key={pool.id} className="hover:bg-stone-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-primary">{pool.symbol}</div>
-                        <div className="text-sm text-secondary">{pool.name}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium">
-                          {pool.type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-primary">${pool.price.toFixed(2)}</td>
-                      <td className="px-6 py-4">
-                        <div className={`flex items-center gap-1 font-medium ${
-                          pool.change24h >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {pool.change24h >= 0 ? (
-                            <ArrowUpRight className="w-4 h-4" />
-                          ) : (
-                            <ArrowDownRight className="w-4 h-4" />
-                          )}
-                          <span>{pool.change24h >= 0 ? '+' : ''}{pool.change24h}%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-primary">{pool.volume24h}</td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="font-semibold text-primary">{pool.liquidity}</div>
-                          <div className="text-xs text-secondary">{pool.tokensInPool.toLocaleString()} tokens</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-primary font-medium">{pool.tradingFee}</td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => setSelectedPool(pool)}
-                          disabled={!walletConnected}
-                          className="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-opacity-90 transition-all font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
-                        >
-                          Trade
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        {/* Risk Disclaimer */}
-        <section className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex gap-4">
-            <div className="text-xl font-bold text-blue-900">ⓘ</div>
-            <div>
-              <h4 className="font-semibold text-blue-900 mb-1">Trading Risk Disclosure</h4>
-              <p className="text-sm text-blue-800">
-                Mineral commodity trading involves substantial risk and is not suitable for all investors. 
-                Prices are volatile and can fluctuate rapidly. Only trade with capital you can afford to lose.
-                Past performance does not guarantee future results.
-              </p>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Trade Modal */}
