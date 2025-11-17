@@ -23,15 +23,7 @@ const MOCK_MARKET: MarketData = {
 
 // --- Robust fetcher ---
 export async function fetchMarketData(mineral: string): Promise<MarketData | null> {
-  const base = process.env.NEXT_PUBLIC_API_URL;
-
-  // If no base URL is set, return mock data (avoid runtime null errors).
-  // In production you may prefer to throw or return null instead.
-  if (!base) {
-    console.warn("NEXT_PUBLIC_API_URL not set — returning MOCK_MARKET for", mineral);
-    // If you prefer to return null so the page 404s, change this to 'return null;'
-    return { ...MOCK_MARKET, mineralName: `${mineral.charAt(0).toUpperCase()}${mineral.slice(1)}` };
-  }
+  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
   let res: Response | null = null;
   try {

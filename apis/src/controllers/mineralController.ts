@@ -1,10 +1,16 @@
 import { Request, Response } from 'express';
-import * as xrplService from '../services/xrplService';
+import { getLatestMineralPrices } from '../services/metalApiService';
 
 export const getMineralData = async (req: Request, res: Response) => {
   try {
-    // TODO: Implement logic to get mineral data from XRPL
-    res.json({ message: 'Not implemented yet' });
+    const mineralName = req.params.mineralName;
+    const minerals = await getLatestMineralPrices();
+    const mineral = minerals[mineralName];
+    if (mineral) {
+      res.json(mineral);
+    } else {
+      res.status(404).json({ error: 'Mineral not found' });
+    }
   } catch (error) {
     res.status(500).json({ error: 'Internal server error', message: (error as Error).message });
   }
@@ -12,8 +18,8 @@ export const getMineralData = async (req: Request, res: Response) => {
 
 export const getAllMinerals = async (req: Request, res: Response) => {
   try {
-    // TODO: Implement logic to get all minerals from XRPL
-    res.json({ message: 'Not implemented yet' });
+    const minerals = await getLatestMineralPrices();
+    res.json(minerals);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error', message: (error as Error).message });
   }

@@ -1,4 +1,5 @@
-import React from 'react';
+'use client';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Eye, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/app/components/Navigation';
@@ -15,42 +16,81 @@ type MineralOverview = {
   icon: string;
 };
 
+const defaultMinerals: MineralOverview[] = [
+  {
+    id: 'oil',
+    name: 'Oil',
+    symbol: 'WTI',
+    currentPrice: 'n/a',
+    change: 0,
+    volume: 'n/a',
+    trend: 'up',
+    description: 'West Texas Intermediate crude oil futures',
+    icon: ''
+  },
+  {
+    id: 'gold',
+    name: 'Gold',
+    symbol: 'XAU',
+    currentPrice: 'n/a',
+    change: 0,
+    volume: 'n/a',
+    trend: 'up',
+    description: 'Precious metal commodity futures',
+    icon: ''
+  },
+  {
+    id: 'silver',
+    name: 'Silver',
+    symbol: 'XAG',
+    currentPrice: 'n/a',
+    change: 0,
+    volume: 'n/a',
+    trend: 'up',
+    description: 'Industrial and precious metal futures',
+    icon: ''
+  }
+];
+
 export default function MarketsPage() {
-  const minerals: MineralOverview[] = [
-    {
-      id: 'oil',
-      name: 'Oil',
-      symbol: 'WTI',
-      currentPrice: '$76.45',
-      change: 2.4,
-      volume: '$125.5M',
-      trend: 'up',
-      description: 'West Texas Intermediate crude oil futures',
-      icon: ''
-    },
-    {
-      id: 'gold',
-      name: 'Gold',
-      symbol: 'XAU',
-      currentPrice: '$2,089.30',
-      change: 1.8,
-      volume: '$83.3M',
-      trend: 'up',
-      description: 'Precious metal commodity futures',
-      icon: ''
-    },
-    {
-      id: 'silver',
-      name: 'Silver',
-      symbol: 'XAG',
-      currentPrice: '$31.20',
-      change: 3.1,
-      volume: '$52.2M',
-      trend: 'up',
-      description: 'Industrial and precious metal futures',
-      icon: ''
-    }
-  ];
+  const [minerals, setMinerals] = useState<MineralOverview[]>(defaultMinerals);
+  const [loading, setLoading] = useState(true);
+  const [hasDataError, setHasDataError] = useState(false);
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/minerals';
+    fetch(apiUrl)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        const updatedMinerals = defaultMinerals.map(defaultMineral => {
+          const fetchedMineral = data[defaultMineral.id];
+          if (fetchedMineral) {
+            return {
+              ...defaultMineral,
+              currentPrice: fetchedMineral.priceHistory && fetchedMineral.priceHistory[0] ? `$${fetchedMineral.priceHistory[0].price.toFixed(2)}` : 'n/a',
+              // You can add more fields from fetchedMineral here
+            };
+          }
+          return defaultMineral;
+        });
+        setMinerals(updatedMinerals);
+        setHasDataError(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching minerals:', error);
+        setHasDataError(true);
+        // Keep displaying the default minerals with error state
+        setMinerals(defaultMinerals);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <div className="min-h-screen bg-primary">
@@ -69,7 +109,7 @@ export default function MarketsPage() {
               </p>
             </div>
             <div className="hidden md:block text-right">
-              <div className="text-3xl font-bold text-primary">3</div>
+              <div className="text-3xl font-bold text-primary">{minerals.length}</div>
               <p className="text-sm text-secondary">Active Markets</p>
             </div>
           </div>
@@ -87,8 +127,8 @@ export default function MarketsPage() {
             <div className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm">
               <p className="text-sm text-secondary mb-1">Market Status</p>
               <p className="text-2xl font-bold text-primary flex items-center gap-2">
-                <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-                Live
+                <span className={`w-3 h-3 rounded-full animate-pulse ${hasDataError ? 'bg-red-500' : 'bg-green-500'}`}></span>
+                {hasDataError ? 'Error fetching data' : 'Live'}
               </p>
             </div>
           </div>
@@ -99,7 +139,8 @@ export default function MarketsPage() {
           <h2 className="text-2xl font-bold text-primary mb-6">Available Markets</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {minerals.map((mineral) => (
+            {loading && <p>Loading markets...</p>}
+            {!loading && minerals.map((mineral) => (
               <div
                 key={mineral.id}
                 className="group bg-white rounded-2xl border border-stone-200 hover:border-stone-300 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
@@ -112,16 +153,28 @@ export default function MarketsPage() {
                       <p className="text-sm text-secondary">{mineral.symbol}</p>
                     </div>
                     <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
-                      mineral.trend === 'up'
+                      hasDataError
+                        ? 'bg-red-100 text-red-700'
+                        : mineral.trend === 'up'
                         ? 'bg-green-100 text-green-700'
                         : 'bg-red-100 text-red-700'
                     }`}>
-                      {mineral.trend === 'up' ? (
-                        <TrendingUp className="w-4 h-4" />
+                      {hasDataError ? (
+                        <>
+                          <TrendingDown className="w-4 h-4" />
+                          Error
+                        </>
+                      ) : mineral.trend === 'up' ? (
+                        <>
+                          <TrendingUp className="w-4 h-4" />
+                          {mineral.change > 0 ? '+' : ''}{mineral.change.toFixed(2)}%
+                        </>
                       ) : (
-                        <TrendingDown className="w-4 h-4" />
+                        <>
+                          <TrendingDown className="w-4 h-4" />
+                          {mineral.change > 0 ? '+' : ''}{mineral.change.toFixed(2)}%
+                        </>
                       )}
-                      {mineral.change > 0 ? '+' : ''}{mineral.change}%
                     </div>
                   </div>
                 </div>
@@ -131,13 +184,17 @@ export default function MarketsPage() {
                   {/* Price */}
                   <div className="bg-stone-50 rounded-lg p-3">
                     <p className="text-sm text-secondary mb-1">Current Price</p>
-                    <p className="text-2xl font-bold text-primary">{mineral.currentPrice}</p>
+                    <p className={`text-2xl font-bold ${hasDataError ? 'text-red-500' : 'text-primary'}`}>
+                      {mineral.currentPrice}
+                    </p>
                   </div>
 
                   {/* Volume */}
                   <div>
                     <p className="text-sm text-secondary mb-1">24h Volume</p>
-                    <p className="text-lg font-semibold text-primary">{mineral.volume}</p>
+                    <p className={`text-lg font-semibold ${hasDataError ? 'text-red-500' : 'text-primary'}`}>
+                      {mineral.volume}
+                    </p>
                   </div>
 
                   {/* Description */}
@@ -152,8 +209,8 @@ export default function MarketsPage() {
                       <span>Watch</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-secondary">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                      <span>Live Data</span>
+                      <span className={`w-2 h-2 rounded-full ${hasDataError ? 'bg-red-500' : 'bg-green-500'}`}></span>
+                      <span>{hasDataError ? 'Data Error' : 'Live Data'}</span>
                     </div>
                   </div>
                 </div>

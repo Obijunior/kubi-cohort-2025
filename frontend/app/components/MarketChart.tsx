@@ -13,6 +13,19 @@ interface MarketChartProps {
 }
 
 export default function MarketChart({ data, mineralName }: MarketChartProps) {
+  if (data.length <= 1) {
+    return (
+      <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
+        <h3 className="text-lg font-bold text-stone-900 mb-4">
+          {mineralName} - Price History
+        </h3>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-stone-500">Not enough data to display a chart.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
       <h3 className="text-lg font-bold text-stone-900 mb-4">
