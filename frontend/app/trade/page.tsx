@@ -5,7 +5,8 @@ import { ArrowUpRight, ArrowDownRight, Search, Building2, TrendingUp } from 'luc
 import Navigation from '@/app/components/Navigation';
 import TokenizeAsset from '@/app/components/TokenizeAsset';
 import { useWallet } from '@/app/context/WalletContext';
-import { mockMinerals } from '@/app/utils/mockData';
+import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
+import { get } from 'http';
 
 type MineralPool = {
   id: string;
@@ -34,59 +35,56 @@ type UserPosition = {
 const initializeMineralPools = (): MineralPool[] => {
   const pools: MineralPool[] = [];
   
-  // Oil pool
-  if (mockMinerals.oil && mockMinerals.oil.priceHistory.length > 0) {
-    const oilPrice = mockMinerals.oil.priceHistory[mockMinerals.oil.priceHistory.length - 1].price;
-    const oilPrevPrice = mockMinerals.oil.priceHistory[mockMinerals.oil.priceHistory.length - 2]?.price || oilPrice;
-    pools.push({
-      id: 'oil',
+  const poolConfigs = [
+    {
+      key: 'oil' as const,
       symbol: 'WTI',
       name: 'Oil',
       type: 'Energy',
-      price: oilPrice,
-      change24h: parseFloat((((oilPrice - oilPrevPrice) / oilPrevPrice) * 100).toFixed(2)),
       volume24h: '$125.5M',
       liquidity: '$2.5M',
       tradingFee: '0.3%',
       tokensInPool: 500000
-    });
-  }
-
-  // Gold pool
-  if (mockMinerals.gold && mockMinerals.gold.priceHistory.length > 0) {
-    const goldPrice = mockMinerals.gold.priceHistory[mockMinerals.gold.priceHistory.length - 1].price;
-    const goldPrevPrice = mockMinerals.gold.priceHistory[mockMinerals.gold.priceHistory.length - 2]?.price || goldPrice;
-    pools.push({
-      id: 'gold',
+    },
+    {
+      key: 'gold' as const,
       symbol: 'XAU',
       name: 'Gold',
       type: 'Precious Metal',
-      price: goldPrice,
-      change24h: parseFloat((((goldPrice - goldPrevPrice) / goldPrevPrice) * 100).toFixed(2)),
       volume24h: '$83.3M',
       liquidity: '$1.8M',
       tradingFee: '0.25%',
       tokensInPool: 400000
-    });
-  }
-
-  // Silver pool
-  if (mockMinerals.silver && mockMinerals.silver.priceHistory.length > 0) {
-    const silverPrice = mockMinerals.silver.priceHistory[mockMinerals.silver.priceHistory.length - 1].price;
-    const silverPrevPrice = mockMinerals.silver.priceHistory[mockMinerals.silver.priceHistory.length - 2]?.price || silverPrice;
-    pools.push({
-      id: 'silver',
+    },
+    {
+      key: 'silver' as const,
       symbol: 'XAG',
       name: 'Silver',
       type: 'Precious Metal',
-      price: silverPrice,
-      change24h: parseFloat((((silverPrice - silverPrevPrice) / silverPrevPrice) * 100).toFixed(2)),
       volume24h: '$52.2M',
       liquidity: '$1.2M',
       tradingFee: '0.35%',
       tokensInPool: 350000
-    });
-  }
+    }
+  ];
+
+  poolConfigs.forEach(config => {
+    const mineralData = mockMinerals[config.key];
+    if (mineralData && mineralData.priceHistory.length > 0) {
+      pools.push({
+        id: config.key,
+        symbol: config.symbol,
+        name: config.name,
+        type: config.type,
+        price: getCurrentPrice(mineralData.priceHistory),
+        change24h: calculatePriceChange(mineralData.priceHistory),
+        volume24h: config.volume24h,
+        liquidity: config.liquidity,
+        tradingFee: config.tradingFee,
+        tokensInPool: config.tokensInPool
+      });
+    }
+  });
 
   return pools;
 };
@@ -99,30 +97,45 @@ export default function TradePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [mineralPools] = useState<MineralPool[]>(initializeMineralPools());
 
-  const userPositions: UserPosition[] = [
-    {
-      id: '1',
-      symbol: 'WTI',
-      amount: 500,
-      entryPrice: 74.70,
-      currentPrice: 76.45,
-      pnl: 875.00,
-      pnlPercent: 2.34
-    },
-    {
-      id: '2',
-      symbol: 'XAU',
-      amount: 10,
-      entryPrice: 2053.50,
-      currentPrice: 2089.30,
-      pnl: 357.80,
-      pnlPercent: 1.74
-    }
-  ];
+  const userPositions: UserPosition[] = (() => {
+    const positionConfigs = [
+      {
+        id: '1',
+        symbol: 'WTI',
+        amount: 500,
+        entryPrice: 60.70,
+        mineralKey: 'oil' as const
+      },
+      {
+        id: '2',
+        symbol: 'XAU',
+        amount: 10,
+        entryPrice: 4000.50,
+        mineralKey: 'gold' as const
+      }
+    ];
 
-  const portfolioValue = 1225.50;
-  const totalPnL = 1232.80;
-  const totalPnLPercent = 2.01;
+    return positionConfigs.map(config => {
+      const currentPrice = getCurrentPrice(mockMinerals[config.mineralKey].priceHistory);
+      const pnl = (currentPrice - config.entryPrice) * config.amount;
+      const pnlPercent = ((currentPrice - config.entryPrice) / config.entryPrice) * 100;
+
+      return {
+        id: config.id,
+        symbol: config.symbol,
+        amount: config.amount,
+        entryPrice: config.entryPrice,
+        currentPrice,
+        pnl,
+        pnlPercent
+      };
+    });
+  })();
+
+  const portfolioValue = userPositions.reduce((sum, position) => sum + position.amount * position.currentPrice, 0);
+  const totalPnL = userPositions.reduce((sum, position) => sum + position.pnl, 0);
+  const totalInitialValue = userPositions.reduce((sum, position) => sum + position.amount * position.entryPrice, 0);
+  const totalPnLPercent = totalInitialValue > 0 ? (totalPnL / totalInitialValue) * 100 : 0;
 
   const filteredPools = mineralPools.filter(pool =>
     pool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -305,7 +318,7 @@ export default function TradePage() {
               </div>
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">Total P&L</p>
-                <p className="text-3xl font-bold text-green-600">
+                <p className={`text-3xl font-bold ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   ${totalPnL.toFixed(2)}
                 </p>
               </div>
@@ -315,7 +328,7 @@ export default function TradePage() {
               </div>
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">24h Change</p>
-                <p className="text-3xl font-bold text-green-600">+{totalPnLPercent.toFixed(2)}%</p>
+                <p className={`text-3xl font-bold ${totalPnLPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>{totalPnLPercent >= 0 ? '+' : ''}{totalPnLPercent.toFixed(2)}%</p>
               </div>
             </section>
 
@@ -346,9 +359,9 @@ export default function TradePage() {
                             <td className="px-6 py-4 text-primary">${position.entryPrice.toFixed(2)}</td>
                             <td className="px-6 py-4 text-primary">${position.currentPrice.toFixed(2)}</td>
                             <td className="px-6 py-4">
-                              <div className="text-green-600">
-                                <div className="font-semibold">${position.pnl.toFixed(2)}</div>
-                                <div className="text-xs">+{position.pnlPercent.toFixed(2)}%</div>
+                              <div className={position.pnl >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                <div className="font-semibold">{position.pnl.toFixed(2)}</div>
+                                <div className="text-xs">{position.pnlPercent >= 0 ? '+' : ''}{position.pnlPercent.toFixed(2)}%</div>
                               </div>
                             </td>
                             <td className="px-6 py-4">

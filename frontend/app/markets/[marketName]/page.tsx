@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import MarketChart from "../../components/MarketChart";
 import Navigation from "../../components/Navigation";
-import { mockMinerals } from "@/app/utils/mockData";
+import { mockMinerals, getCurrentPrice, getPreviousPrice, getLowestPrice, getHighestPrice } from "@/app/utils/mockData";
 
 // --- Types ---
 type MarketData = {
@@ -51,9 +51,11 @@ export default async function MarketPage({ params }: { params: Promise<{ marketN
     ? data.priceHistory 
     : [{ date: new Date().toISOString().split('T')[0], price: 0 }];
 
-  const currentPrice = priceHistory[priceHistory.length - 1]?.price ?? 0;
-  const previousPrice = priceHistory[priceHistory.length - 2]?.price ?? currentPrice;
+  const currentPrice = getCurrentPrice(priceHistory);
+  const previousPrice = getPreviousPrice(priceHistory);
   const priceChange = ((currentPrice - previousPrice) / previousPrice) * 100;
+  const lowestPrice = getLowestPrice(priceHistory);
+  const highestPrice = getHighestPrice(priceHistory);
 
   return (
     <div>
@@ -79,7 +81,7 @@ export default async function MarketPage({ params }: { params: Promise<{ marketN
         <div className="p-6 bg-white rounded-2xl shadow-sm border">
           <div className="text-gray-600 text-sm">Lowest Price</div>
           <div className="text-2xl font-semibold mt-2">
-            ${Math.min(...priceHistory.map(p => p.price)).toFixed(2)}
+            ${lowestPrice.toFixed(2)}
           </div>
           <div className="mt-1 text-sm text-gray-500">Last 30 days</div>
         </div>
@@ -87,7 +89,7 @@ export default async function MarketPage({ params }: { params: Promise<{ marketN
         <div className="p-6 bg-white rounded-2xl shadow-sm border">
           <div className="text-gray-600 text-sm">Highest Price</div>
           <div className="text-2xl font-semibold mt-2">
-            ${Math.max(...priceHistory.map(p => p.price)).toFixed(2)}
+            ${highestPrice.toFixed(2)}
           </div>
           <div className="mt-1 text-sm text-gray-500">Last 30 days</div>
         </div>

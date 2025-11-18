@@ -107,3 +107,26 @@ export const mockMinerals: { [key: string]: MineralData } = {
     priceHistory: silverHistory
   }
 };
+
+// Helper utilities for working with mineral data
+export const getCurrentPrice = (priceHistory: Array<{ date: string; price: number }>): number => {
+  return priceHistory.length > 0 ? priceHistory[priceHistory.length - 1].price : 0;
+};
+
+export const getPreviousPrice = (priceHistory: Array<{ date: string; price: number }>): number => {
+  return priceHistory.length > 1 ? priceHistory[priceHistory.length - 2].price : getCurrentPrice(priceHistory);
+};
+
+export const calculatePriceChange = (priceHistory: Array<{ date: string; price: number }>): number => {
+  const currentPrice = getCurrentPrice(priceHistory);
+  const previousPrice = getPreviousPrice(priceHistory);
+  return parseFloat((((currentPrice - previousPrice) / previousPrice) * 100).toFixed(2));
+};
+
+export const getLowestPrice = (priceHistory: Array<{ date: string; price: number }>): number => {
+  return Math.min(...priceHistory.map(p => p.price));
+};
+
+export const getHighestPrice = (priceHistory: Array<{ date: string; price: number }>): number => {
+  return Math.max(...priceHistory.map(p => p.price));
+};

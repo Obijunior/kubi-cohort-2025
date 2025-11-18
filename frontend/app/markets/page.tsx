@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Eye, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/app/components/Navigation';
-import { mockMinerals } from '@/app/utils/mockData';
+import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
 
 type MineralOverview = {
   id: string;
@@ -52,9 +52,8 @@ export default function MarketsPage() {
       const updatedMinerals = defaultMinerals.map(defaultMineral => {
         const fetchedMineral = mockMinerals[defaultMineral.id];
         if (fetchedMineral && fetchedMineral.priceHistory && fetchedMineral.priceHistory.length > 0) {
-          const currentPrice = fetchedMineral.priceHistory[fetchedMineral.priceHistory.length - 1].price;
-          const previousPrice = fetchedMineral.priceHistory[fetchedMineral.priceHistory.length - 2]?.price || currentPrice;
-          const change = ((currentPrice - previousPrice) / previousPrice) * 100;
+          const currentPrice = getCurrentPrice(fetchedMineral.priceHistory);
+          const change = calculatePriceChange(fetchedMineral.priceHistory);
           
           return {
             ...defaultMineral,
