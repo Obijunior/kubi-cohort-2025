@@ -6,6 +6,12 @@ import Navigation from '@/app/components/Navigation';
 import TokenizeAsset, { type AssetFormData } from '@/app/components/TokenizeAsset';
 import { useWallet } from '@/app/context/WalletContext';
 import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
+
+type MockMineralEntry = {
+  priceHistory: { date: string; price: number; }[];
+};
+
+const typedMockMinerals: Record<string, MockMineralEntry> = mockMinerals;
 import { POOL_CONFIGS } from '@/app/utils/poolConfig';
 
 type MineralPool = {
@@ -30,12 +36,20 @@ type UserPosition = {
   pnlPercent: number;
 };
 
+type PositionConfig = {
+  id: string;
+  symbol: string;
+  amount: number;
+  entryPrice: number;
+  mineralKey: 'oil' | 'gold' | 'silver';
+};
+
 // Initialize mineral pools from mockData
 const initializeMineralPools = (): MineralPool[] => {
   const pools: MineralPool[] = [];
 
   POOL_CONFIGS.forEach(config => {
-    const mineralData = mockMinerals[config.key];
+    const mineralData = typedMockMinerals[config.key];
     if (mineralData && mineralData.priceHistory.length > 0) {
       pools.push({
         id: config.key,
@@ -61,20 +75,20 @@ export default function TradePage() {
   const [tradeAmount, setTradeAmount] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [mineralPools] = useState<MineralPool[]>(initializeMineralPools());
-  const [positionConfigs, setPositionConfigs] = useState([
+  const [positionConfigs, setPositionConfigs] = useState<PositionConfig[]>([
     {
       id: '1',
       symbol: 'WTI',
       amount: 500,
       entryPrice: 60.70,
-      mineralKey: 'oil' as const
+      mineralKey: 'oil'
     },
     {
       id: '2',
       symbol: 'XAU',
       amount: 10,
       entryPrice: 4000.50,
-      mineralKey: 'gold' as const
+      mineralKey: 'gold'
     }
   ]);
   const [closedPnL, setClosedPnL] = useState(0);
@@ -89,7 +103,7 @@ export default function TradePage() {
   };
 
   const [companyAssets, setCompanyAssets] = useState<CompanyAsset[]>(() => POOL_CONFIGS.map(config => {
-    const mineralData = mockMinerals[config.key];
+    const mineralData = typedMockMinerals[config.key];
     const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
     return {
       symbol: config.symbol,
@@ -103,7 +117,7 @@ export default function TradePage() {
   const handleTokenizeAsset = (newAssetData: AssetFormData) => {
     if (!newAssetData.assetType) return;
 
-    const mineralData = mockMinerals[newAssetData.assetType as keyof typeof mockMinerals];
+    const mineralData = typedMockMinerals[newAssetData.assetType];
     const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
 
     const newAsset: CompanyAsset = {
@@ -126,7 +140,7 @@ export default function TradePage() {
 
   const userPositions: UserPosition[] = (() => {
     return positionConfigs.map(config => {
-      const currentPrice = getCurrentPrice(mockMinerals[config.mineralKey].priceHistory);
+      const currentPrice = getCurrentPrice(typedMockMinerals[config.mineralKey].priceHistory);
       const pnl = (currentPrice - config.entryPrice) * config.amount;
       const pnlPercent = ((currentPrice - config.entryPrice) / config.entryPrice) * 100;
 
@@ -522,12 +536,12 @@ export default function TradePage() {
                     const amount = parseFloat(tradeAmount);
                     if (amount > 0 && selectedPool) {
                       const mineralKey = (['oil', 'gold', 'silver'] as const).find(
-                        key => mockMinerals[key] && 
-                        getCurrentPrice(mockMinerals[key].priceHistory).toFixed(2) === selectedPool.price.toFixed(2)
+                        key => typedMockMinerals[key] && 
+                        getCurrentPrice(typedMockMinerals[key].priceHistory).toFixed(2) === selectedPool.price.toFixed(2)
                       );
 
                       if (mineralKey) {
-                        const currentPrice = getCurrentPrice(mockMinerals[mineralKey].priceHistory);
+                        const currentPrice = getCurrentPrice(typedMockMinerals[mineralKey].priceHistory);
                         
                         // Create new position with unique ID
                         const newId = (Math.max(...positionConfigs.map(p => parseInt(p.id)), 0) + 1).toString();
