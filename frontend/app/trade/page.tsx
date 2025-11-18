@@ -1,42 +1,29 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, Search, Building2, TrendingUp } from 'lucide-react';
+import { Building2, TrendingUp } from 'lucide-react';
 import Navigation from '@/app/components/Navigation';
-import TokenizeAsset, { type AssetFormData } from '@/app/components/TokenizeAsset';
+import CompanyView from '@/app/components/CompanyView';
+import TraderView from '@/app/components/TraderView';
 import { useWallet } from '@/app/context/WalletContext';
-import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
+import { mockMinerals, getCurrentPrice } from '@/app/utils/mockData';
+import { POOL_CONFIGS } from '@/app/utils/poolConfig';
 
 type MockMineralEntry = {
   priceHistory: { date: string; price: number; }[];
 };
 
 const typedMockMinerals: Record<string, MockMineralEntry> = mockMinerals;
-import { POOL_CONFIGS } from '@/app/utils/poolConfig';
 
-type MineralPool = {
-  id: string;
+export type CompanyAsset = {
   symbol: string;
   name: string;
-  type: string;
-  price: number;
-  change24h: number;
-  liquidity: string;
-  tradingFee: string;
   tokensInPool: number;
+  price: number;
+  feePercentage: number;
 };
 
-type UserPosition = {
-  id: string;
-  symbol: string;
-  amount: number;
-  entryPrice: number;
-  currentPrice: number;
-  pnl: number;
-  pnlPercent: number;
-};
-
-type PositionConfig = {
+export type PositionConfig = {
   id: string;
   symbol: string;
   amount: number;
@@ -44,37 +31,26 @@ type PositionConfig = {
   mineralKey: 'oil' | 'gold' | 'silver';
 };
 
-// Initialize mineral pools from mockData
-const initializeMineralPools = (): MineralPool[] => {
-  const pools: MineralPool[] = [];
-
-  POOL_CONFIGS.forEach(config => {
-    const mineralData = typedMockMinerals[config.key];
-    if (mineralData && mineralData.priceHistory.length > 0) {
-      pools.push({
-        id: config.key,
-        symbol: config.symbol,
-        name: config.name,
-        type: config.type,
-        price: getCurrentPrice(mineralData.priceHistory),
-        change24h: calculatePriceChange(mineralData.priceHistory),
-        liquidity: config.liquidity,
-        tradingFee: config.tradingFee,
-        tokensInPool: config.tokensInPool
-      });
-    }
-  });
-
-  return pools;
-};
-
 export default function TradePage() {
   const { isConnected: walletConnected } = useWallet();
   const [activeView, setActiveView] = useState<'company' | 'trader'>('trader');
-  const [selectedPool, setSelectedPool] = useState<MineralPool | null>(null);
-  const [tradeAmount, setTradeAmount] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [mineralPools] = useState<MineralPool[]>(initializeMineralPools());
+
+  // Company Dashboard State
+  const [companyAssets, setCompanyAssets] = useState<CompanyAsset[]>(() => 
+    POOL_CONFIGS.map(config => {
+      const mineralData = typedMockMinerals[config.key];
+      const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
+      return {
+        symbol: config.symbol,
+        name: config.name,
+        tokensInPool: config.tokensInPool,
+        price,
+        feePercentage: 0.25
+      };
+    })
+  );
+
+  // Trader Dashboard State
   const [positionConfigs, setPositionConfigs] = useState<PositionConfig[]>([
     {
       id: '1',
@@ -92,80 +68,6 @@ export default function TradePage() {
     }
   ]);
   const [closedPnL, setClosedPnL] = useState(0);
-
-  // Company Dashboard State
-  type CompanyAsset = {
-    symbol: string;
-    name: string;
-    tokensInPool: number;
-    price: number;
-    feePercentage: number;
-  };
-
-  const [companyAssets, setCompanyAssets] = useState<CompanyAsset[]>(() => POOL_CONFIGS.map(config => {
-    const mineralData = typedMockMinerals[config.key];
-    const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
-    return {
-      symbol: config.symbol,
-      name: config.name,
-      tokensInPool: config.tokensInPool,
-      price,
-      feePercentage: 0.25
-    };
-  }));
-
-  const handleTokenizeAsset = (newAssetData: AssetFormData) => {
-    if (!newAssetData.assetType) return;
-
-    const mineralData = typedMockMinerals[newAssetData.assetType];
-    const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
-
-    const newAsset: CompanyAsset = {
-      symbol: newAssetData.assetSymbol,
-      name: newAssetData.assetName,
-      tokensInPool: parseInt(newAssetData.tokensToMint, 10),
-      price: price,
-      feePercentage: 0.25
-    };
-
-    setCompanyAssets(prevAssets => [...prevAssets, newAsset]);
-  };
-
-  const totalCompanyAssets = companyAssets.length;
-  const totalCompanyLiquidity = companyAssets.reduce((sum, asset) => sum + (asset.tokensInPool * asset.price), 0);
-  const totalFeesEarned = companyAssets.reduce((sum, asset) => {
-    // Estimate fees based on a trading volume assumption (e.g., 10% of liquidity traded monthly)
-    return sum + ((asset.tokensInPool * asset.price) * 0.10 * asset.feePercentage);
-  }, 0);
-
-  const userPositions: UserPosition[] = (() => {
-    return positionConfigs.map(config => {
-      const currentPrice = getCurrentPrice(typedMockMinerals[config.mineralKey].priceHistory);
-      const pnl = (currentPrice - config.entryPrice) * config.amount;
-      const pnlPercent = ((currentPrice - config.entryPrice) / config.entryPrice) * 100;
-
-      return {
-        id: config.id,
-        symbol: config.symbol,
-        amount: config.amount,
-        entryPrice: config.entryPrice,
-        currentPrice,
-        pnl,
-        pnlPercent
-      };
-    });
-  })();
-
-  const portfolioValue = userPositions.reduce((sum, position) => sum + position.amount * position.currentPrice, 0);
-  const openPnL = userPositions.reduce((sum, position) => sum + position.pnl, 0);
-  const totalPnL = openPnL + closedPnL;
-  const totalInitialValue = userPositions.reduce((sum, position) => sum + position.amount * position.entryPrice, 0);
-  const totalPnLPercent = totalInitialValue > 0 ? (openPnL / totalInitialValue) * 100 : 0;
-
-  const filteredPools = mineralPools.filter(pool =>
-    pool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    pool.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen bg-primary">
@@ -208,382 +110,26 @@ export default function TradePage() {
                 <TrendingUp className="w-4 h-4" />
                 Trader
               </button>
-
             </div>
           </div>
         </section>
 
-        {/* Company Dashboard View */}
+        {/* Conditional View Rendering */}
         {activeView === 'company' ? (
-          <div className="space-y-8">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-primary">Your Tokenized Assets</h2>
-                <p className="text-secondary mt-1">Create and manage RWA tokens</p>
-              </div>
-              <div className="hover:bg-opacity-90 transition-rounded-lg">
-            <TokenizeAsset onAssetTokenized={handleTokenizeAsset} />
-            </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-                <p className="text-sm text-secondary mb-2">Total Assets</p>
-                <p className="text-3xl font-bold text-primary">{totalCompanyAssets}</p>
-              </div>
-              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-                <p className="text-sm text-secondary mb-2">Total Pool Liquidity</p>
-                <p className="text-3xl font-bold text-primary">${(totalCompanyLiquidity / 1_000_000).toFixed(1)}M</p>
-              </div>
-              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-                <p className="text-sm text-secondary mb-2">Total Fees Earned</p>
-                <p className="text-3xl font-bold text-green-600">${totalFeesEarned.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-stone-100">
-                <h3 className="text-xl font-bold text-primary">Your Assets & Trading Pools</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-stone-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Asset</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Total Supply</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Pool Liquidity</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Fees Earned</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-200">
-                    {companyAssets.map((asset) => {
-                      const assetLiquidity = asset.tokensInPool * asset.price;
-                      const estimatedFeesPerAsset = (assetLiquidity * 0.10 * asset.feePercentage);
-                      return (
-                        <tr key={asset.symbol} className="hover:bg-stone-50 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="font-semibold text-primary">{asset.symbol}</div>
-                            <div className="text-sm text-secondary">{asset.name}</div>
-                          </td>
-                          <td className="px-6 py-4 text-primary">{asset.tokensInPool.toLocaleString()}</td>
-                          <td className="px-6 py-4 text-primary">${(assetLiquidity / 1_000_000).toFixed(2)}M</td>
-                          <td className="px-6 py-4 font-semibold text-green-600">${estimatedFeesPerAsset.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
-                          <td className="px-6 py-4">
-                            <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
-                              Manage
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <div className="flex gap-4">
-                <div className="text-xl font-bold text-blue-900">ⓘ</div>
-                <div>
-                  <h4 className="font-semibold text-blue-900 mb-1">How Asset Leasing Works</h4>
-                  <p className="text-sm text-blue-800">
-                    Tokenize your physical assets and create liquidity pools. Traders will trade against your pools, 
-                    and you earn fees from every transaction while retaining full ownership of the underlying assets.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <CompanyView 
+            companyAssets={companyAssets}
+            setCompanyAssets={setCompanyAssets}
+          />
         ) : (
-          <div className="space-y-8">
-            {/* Trader Dashboard */}
-
-            {/* Portfolio Stats */}
-            <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-                <p className="text-sm text-secondary mb-2">Portfolio Value</p>
-                <p className="text-3xl font-bold text-primary">${portfolioValue.toFixed(2)}</p>
-              </div>
-              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-                <p className="text-sm text-secondary mb-2">Total P&L</p>
-                <p className={`text-3xl font-bold ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalPnL < 0 ? '-' : ''}${Math.abs(totalPnL).toFixed(2)}
-                </p>
-              </div>
-              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-                <p className="text-sm text-secondary mb-2">Active Positions</p>
-                <p className="text-3xl font-bold text-primary">{userPositions.length}</p>
-              </div>
-              <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
-                <p className="text-sm text-secondary mb-2">24h Change</p>
-                <p className={`text-3xl font-bold ${totalPnLPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>{totalPnLPercent >= 0 ? '+' : ''}{totalPnLPercent.toFixed(2)}%</p>
-              </div>
-            </section>
-
-            {/* Your Positions */}
-            <section className="mb-8">
-              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-stone-100">
-                  <h2 className="text-2xl font-bold text-primary">Your Positions</h2>
-                </div>
-                {userPositions.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-stone-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Asset</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Amount</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Entry Price</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Current Price</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">P&L</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-stone-200">
-                        {userPositions.map(position => (
-                          <tr key={position.id} className="hover:bg-stone-50 transition-colors">
-                            <td className="px-6 py-4 font-semibold text-primary">{position.symbol}</td>
-                            <td className="px-6 py-4 text-primary">{position.amount.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-primary">${position.entryPrice.toFixed(2)}</td>
-                            <td className="px-6 py-4 text-primary">${position.currentPrice.toFixed(2)}</td>
-                            <td className="px-6 py-4">
-                              <div className={position.pnl >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                <div className="font-semibold">{position.pnl < 0 ? '-' : ''}${Math.abs(position.pnl).toFixed(2)}</div>
-                                <div className="text-xs">{position.pnlPercent >= 0 ? '+' : '-'}{Math.abs(position.pnlPercent).toFixed(2)}%</div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <button 
-                                onClick={() => {
-                                  // Add the position's P&L to closed P&L
-                                  setClosedPnL(closedPnL + position.pnl);
-                                  // Remove position from configs
-                                  setPositionConfigs(positionConfigs.filter(config => config.id !== position.id));
-                                }}
-                                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-                              >
-                                Close
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="p-6 text-center">
-                    <p className="text-secondary">No active positions. Start trading to create positions.</p>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* Available Trading Pools */}
-            <section>
-              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-stone-100 flex justify-between items-center">
-                  <div>
-                    <h2 className="text-2xl font-bold text-primary mb-1">Available Markets</h2>
-                    <p className="text-sm text-secondary">Trade tokenized mineral commodities</p>
-                  </div>
-                  <div className="relative w-64">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search by name or symbol..."
-                      className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-accent focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-stone-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Asset</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Type</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Price</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Change</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Liquidity</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Fee</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-200">
-                      {filteredPools.map(pool => (
-                        <tr key={pool.id} className="hover:bg-stone-50 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="font-semibold text-primary">{pool.symbol}</div>
-                            <div className="text-sm text-secondary">{pool.name}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium">
-                              {pool.type}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 font-semibold text-primary">${pool.price.toFixed(2)}</td>
-                          <td className="px-6 py-4">
-                            <div className={`flex items-center gap-1 font-medium ${
-                              pool.change24h >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {pool.change24h >= 0 ? (
-                                <ArrowUpRight className="w-4 h-4" />
-                              ) : (
-                                <ArrowDownRight className="w-4 h-4" />
-                              )}
-                              <span>{pool.change24h >= 0 ? '+' : ''}{pool.change24h}%</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div>
-                              <div className="font-semibold text-primary">{pool.liquidity}</div>
-                              <div className="text-xs text-secondary">{pool.tokensInPool.toLocaleString()} tokens</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-primary font-medium">{pool.tradingFee}</td>
-                          <td className="px-6 py-4">
-                            <button
-                              onClick={() => setSelectedPool(pool)}
-                              disabled={!walletConnected}
-                              className="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-opacity-90 transition-all font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
-                            >
-                              Trade
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </section>
-
-            {/* Risk Disclaimer */}
-            <section className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <div className="flex gap-4">
-                <div className="text-xl font-bold text-blue-900">ⓘ</div>
-                <div>
-                  <h4 className="font-semibold text-blue-900 mb-1">Trading Risk Disclosure</h4>
-                  <p className="text-sm text-blue-800">
-                    Mineral commodity trading involves substantial risk and is not suitable for all investors. 
-                    Prices are volatile and can fluctuate rapidly. Only trade with capital you can afford to lose.
-                    Past performance does not guarantee future results.
-                  </p>
-                </div>
-              </div>
-            </section>
-          </div>
+          <TraderView
+            walletConnected={walletConnected}
+            positionConfigs={positionConfigs}
+            setPositionConfigs={setPositionConfigs}
+            closedPnL={closedPnL}
+            setClosedPnL={setClosedPnL}
+          />
         )}
       </main>
-
-      {/* Trade Modal */}
-      {selectedPool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full border border-stone-200 shadow-lg">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h3 className="text-2xl font-bold text-primary">{selectedPool.symbol}</h3>
-                <p className="text-sm text-secondary">{selectedPool.name}</p>
-              </div>
-              <button 
-                onClick={() => setSelectedPool(null)} 
-                className="text-secondary hover:text-primary transition-colors text-2xl leading-none"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mb-6 p-4 bg-stone-50 rounded-lg space-y-3 border border-stone-200">
-              <div className="flex justify-between">
-                <span className="text-sm text-secondary">Current Price</span>
-                <span className="font-semibold text-primary">${selectedPool.price.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-secondary">Pool Liquidity</span>
-                <span className="font-semibold text-primary">{selectedPool.liquidity}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-secondary">Trading Fee</span>
-                <span className="font-semibold text-primary">{selectedPool.tradingFee}</span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-primary mb-2">Trade Amount</label>
-                <input
-                  type="number"
-                  value={tradeAmount}
-                  onChange={(e) => setTradeAmount(e.target.value)}
-                  placeholder="Enter amount"
-                  className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent text-sm"
-                />
-                <p className="text-xs text-secondary mt-2">
-                  Estimated cost: ${(parseFloat(tradeAmount || '0') * selectedPool.price).toFixed(2)}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-4">
-                <button
-                  onClick={() => {
-                    const amount = parseFloat(tradeAmount);
-                    if (amount > 0 && selectedPool) {
-                      const mineralKey = (['oil', 'gold', 'silver'] as const).find(
-                        key => typedMockMinerals[key] && 
-                        getCurrentPrice(typedMockMinerals[key].priceHistory).toFixed(2) === selectedPool.price.toFixed(2)
-                      );
-
-                      if (mineralKey) {
-                        const currentPrice = getCurrentPrice(typedMockMinerals[mineralKey].priceHistory);
-                        
-                        // Create new position with unique ID
-                        const newId = (Math.max(...positionConfigs.map(p => parseInt(p.id)), 0) + 1).toString();
-                        setPositionConfigs([
-                          ...positionConfigs,
-                          {
-                            id: newId,
-                            symbol: selectedPool.symbol,
-                            amount,
-                            entryPrice: currentPrice,
-                            mineralKey
-                          }
-                        ]);
-
-                        setSelectedPool(null);
-                        setTradeAmount('');
-                      }
-                    }
-                  }}
-                  disabled={!tradeAmount || !walletConnected}
-                  className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                  Buy
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedPool(null);
-                    setTradeAmount('');
-                  }}
-                  className="px-4 py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-              </div>
-
-              {!walletConnected && (
-                <p className="text-xs text-red-600 text-center pt-2">Please connect a wallet to trade</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
