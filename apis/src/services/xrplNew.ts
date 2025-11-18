@@ -1,3 +1,4 @@
+// npx ts-node test-xrpl.ts full
 import { Client, TrustSet, Wallet, xrpToDrops, Payment, OfferCreate } from "xrpl";
 
 // ---------------------------------------------
