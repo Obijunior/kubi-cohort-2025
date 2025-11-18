@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import MarketChart from "../../components/MarketChart";
 import Navigation from "../../components/Navigation";
+import { mockMinerals } from "@/app/utils/mockData";
 
 // --- Types ---
 type MarketData = {
@@ -10,65 +11,25 @@ type MarketData = {
   priceHistory: Array<{ date: string; price: number }>;
 };
 
-// --- Mock fallback (useful for local dev / tests) ---
-const MOCK_MARKET: MarketData = {
-  mineralName: '',
-  lastUpdated: new Date().toISOString(),
-  priceHistory: [
-    { date: '2025-11-15', price: 76.45 },
-    { date: '2025-11-14', price: 74.82 },
-    { date: '2025-11-13', price: 75.30 },
-  ],
-};
-
-// --- Robust fetcher ---
-export async function fetchMarketData(mineral: string): Promise<MarketData | null> {
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-
-  let res: Response | null = null;
+// --- Mock data fetcher ---
+export function fetchMarketData(mineral: string): MarketData | null {
   try {
-    // sanitize base to avoid double slashes
-    const url = `${base.replace(/\/$/, "")}/minerals/${encodeURIComponent(mineral)}`;
-    res = await fetch(url, { next: { revalidate: 60 } });
-  } catch (err) {
-    console.error("Fetch to API failed:", err);
-    return null;
-  }
-
-  if (!res) {
-    console.error("No response object received from fetch for mineral:", mineral);
-    return null;
-  }
-
-  if (!res.ok) {
-    console.error(`API returned non-OK status ${res.status} ${res.statusText} for ${mineral}`);
-    return null;
-  }
-
-  // parse JSON with defensive checks
-  try {
-    // In some runtimes res.json() may reject — catch below will handle it
-    const json = await res.json();
-    if (!json || typeof json !== "object") {
-      console.error("API returned invalid JSON shape for mineral:", mineral, json);
+    const mockData = mockMinerals[mineral];
+    
+    if (!mockData) {
+      console.error("Mineral not found in mock data:", mineral);
       return null;
     }
 
-    // Map/validate fields into MarketData - only expecting date/time and price
     const data: MarketData = {
-      mineralName: String(json.mineralName ?? json.mineral ?? mineral),
-      lastUpdated: json.lastUpdated ? String(json.lastUpdated) : undefined,
-      priceHistory: Array.isArray(json.priceHistory)
-        ? json.priceHistory.map((p: Record<string, unknown>) => ({
-            date: String(p.date ?? ""),
-            price: typeof p.price === "number" ? p.price : 0,
-          }))
-        : [],
+      mineralName: mockData.mineralName,
+      lastUpdated: mockData.lastUpdated,
+      priceHistory: mockData.priceHistory
     };
 
     return data;
   } catch (err) {
-    console.error("Failed to parse JSON from API for mineral:", mineral, err);
+    console.error("Error loading mock data for mineral:", mineral, err);
     return null;
   }
 }
@@ -80,7 +41,7 @@ export async function generateMetadata({ params }: { params: Promise<{ marketNam
 
 export default async function MarketPage({ params }: { params: Promise<{ marketName: string }> }) {
   const { marketName } = await params;
-  const data = await fetchMarketData(marketName);
+  const data = fetchMarketData(marketName);
 
   // If fetchMarketData returns null, show a 404. This avoids trying to read properties of null.
   if (!data) return notFound();

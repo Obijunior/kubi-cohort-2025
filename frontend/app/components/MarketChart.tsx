@@ -1,4 +1,3 @@
-// app/components/MarketChart.tsx
 'use client';
 
 import React from 'react';
@@ -47,9 +46,14 @@ export default function MarketChart({ data, mineralName }: MarketChartProps) {
             style={{ fontSize: '12px' }}
           />
           <YAxis 
+            domain={[
+              (dataMin: number) => parseFloat((dataMin * 0.98).toFixed(2)),
+              (dataMax: number) => parseFloat((dataMax * 1.02).toFixed(2))
+            ]}
+            // --------------------
             stroke="#78716c"
             style={{ fontSize: '12px' }}
-            tickFormatter={(value) => `$${value}`}
+            tickFormatter={(value) => `$${value.toLocaleString()}`} // Added .toLocaleString() for nicer commas (e.g. $4,200)
           />
           <Tooltip 
             contentStyle={{

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Eye, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/app/components/Navigation';
+import { mockMinerals } from '@/app/utils/mockData';
 
 type MineralOverview = {
   id: string;
@@ -10,7 +11,6 @@ type MineralOverview = {
   symbol: string;
   currentPrice: string;
   change: number;
-  volume: string;
   trend: 'up' | 'down';
   description: string;
   icon: string;
@@ -23,7 +23,6 @@ const defaultMinerals: MineralOverview[] = [
     symbol: 'WTI',
     currentPrice: 'n/a',
     change: 0,
-    volume: 'n/a',
     trend: 'up',
     description: 'West Texas Intermediate crude oil futures',
     icon: ''
@@ -34,7 +33,6 @@ const defaultMinerals: MineralOverview[] = [
     symbol: 'XAU',
     currentPrice: 'n/a',
     change: 0,
-    volume: 'n/a',
     trend: 'up',
     description: 'Precious metal commodity futures',
     icon: ''
@@ -45,7 +43,6 @@ const defaultMinerals: MineralOverview[] = [
     symbol: 'XAG',
     currentPrice: 'n/a',
     change: 0,
-    volume: 'n/a',
     trend: 'up',
     description: 'Industrial and precious metal futures',
     icon: ''
@@ -58,38 +55,36 @@ export default function MarketsPage() {
   const [hasDataError, setHasDataError] = useState(false);
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/minerals';
-    fetch(apiUrl)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error('Failed to fetch data');
+    try {
+      console.log('📦 Loading mock mineral data...');
+      
+      const updatedMinerals = defaultMinerals.map(defaultMineral => {
+        const fetchedMineral = mockMinerals[defaultMineral.id];
+        if (fetchedMineral && fetchedMineral.priceHistory && fetchedMineral.priceHistory.length > 0) {
+          const currentPrice = fetchedMineral.priceHistory[fetchedMineral.priceHistory.length - 1].price;
+          const previousPrice = fetchedMineral.priceHistory[fetchedMineral.priceHistory.length - 2]?.price || currentPrice;
+          const change = ((currentPrice - previousPrice) / previousPrice) * 100;
+          
+          return {
+            ...defaultMineral,
+            currentPrice: `$${currentPrice.toFixed(2)}`,
+            change: change,
+            trend: change >= 0 ? 'up' : 'down'
+          };
         }
-        return res.json();
-      })
-      .then((data) => {
-        const updatedMinerals = defaultMinerals.map(defaultMineral => {
-          const fetchedMineral = data[defaultMineral.id];
-          if (fetchedMineral) {
-            return {
-              ...defaultMineral,
-              currentPrice: fetchedMineral.priceHistory && fetchedMineral.priceHistory[0] ? `$${fetchedMineral.priceHistory[0].price.toFixed(2)}` : 'n/a',
-              // You can add more fields from fetchedMineral here
-            };
-          }
-          return defaultMineral;
-        });
-        setMinerals(updatedMinerals);
-        setHasDataError(false);
-      })
-      .catch((error) => {
-        console.error('Error fetching minerals:', error);
-        setHasDataError(true);
-        // Keep displaying the default minerals with error state
-        setMinerals(defaultMinerals);
-      })
-      .finally(() => {
-        setLoading(false);
+        return defaultMineral;
       });
+      
+      setMinerals(updatedMinerals);
+      setHasDataError(false);
+      console.log('✅ Successfully loaded mock mineral data');
+    } catch (error) {
+      console.error('Error loading mock data:', error);
+      setHasDataError(true);
+      setMinerals(defaultMinerals);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   return (
@@ -186,14 +181,6 @@ export default function MarketsPage() {
                     <p className="text-sm text-secondary mb-1">Current Price</p>
                     <p className={`text-2xl font-bold ${hasDataError ? 'text-red-500' : 'text-primary'}`}>
                       {mineral.currentPrice}
-                    </p>
-                  </div>
-
-                  {/* Volume */}
-                  <div>
-                    <p className="text-sm text-secondary mb-1">24h Volume</p>
-                    <p className={`text-lg font-semibold ${hasDataError ? 'text-red-500' : 'text-primary'}`}>
-                      {mineral.volume}
                     </p>
                   </div>
 
