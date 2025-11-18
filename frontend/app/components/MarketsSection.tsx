@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { mockMinerals } from '@/app/utils/mockData';
+import { getTokensForMineral } from '@/app/utils/poolConfig';
 
 type Market = {
   mineral: string;
@@ -27,12 +28,13 @@ export default function MarketsSection() {
         const oilPrice = mockMinerals.oil.priceHistory[mockMinerals.oil.priceHistory.length - 1].price;
         const oilPrevPrice = mockMinerals.oil.priceHistory[mockMinerals.oil.priceHistory.length - 2]?.price || oilPrice;
         const oilChange = ((oilPrice - oilPrevPrice) / oilPrevPrice) * 100;
+        const oilTokens = getTokensForMineral('Oil');
         marketData.push({
           mineral: 'Oil',
           symbol: 'WTI',
           price: `$${oilPrice.toFixed(2)}`,
           change: `${oilChange >= 0 ? '+' : ''}${oilChange.toFixed(1)}%`,
-          volume: '$125.5M',
+          volume: `${oilTokens.toLocaleString()}`,
           trend: oilChange >= 0 ? 'up' : 'down'
         });
       }
@@ -42,12 +44,13 @@ export default function MarketsSection() {
         const goldPrice = mockMinerals.gold.priceHistory[mockMinerals.gold.priceHistory.length - 1].price;
         const goldPrevPrice = mockMinerals.gold.priceHistory[mockMinerals.gold.priceHistory.length - 2]?.price || goldPrice;
         const goldChange = ((goldPrice - goldPrevPrice) / goldPrevPrice) * 100;
+        const goldTokens = getTokensForMineral('Gold');
         marketData.push({
           mineral: 'Gold',
           symbol: 'XAU',
           price: `$${goldPrice.toFixed(2)}`,
           change: `${goldChange >= 0 ? '+' : ''}${goldChange.toFixed(1)}%`,
-          volume: '$83.3M',
+          volume: `${goldTokens.toLocaleString()}`,
           trend: goldChange >= 0 ? 'up' : 'down'
         });
       }
@@ -57,12 +60,13 @@ export default function MarketsSection() {
         const silverPrice = mockMinerals.silver.priceHistory[mockMinerals.silver.priceHistory.length - 1].price;
         const silverPrevPrice = mockMinerals.silver.priceHistory[mockMinerals.silver.priceHistory.length - 2]?.price || silverPrice;
         const silverChange = ((silverPrice - silverPrevPrice) / silverPrevPrice) * 100;
+        const silverTokens = getTokensForMineral('Silver');
         marketData.push({
           mineral: 'Silver',
           symbol: 'XAG',
           price: `$${silverPrice.toFixed(2)}`,
           change: `${silverChange >= 0 ? '+' : ''}${silverChange.toFixed(1)}%`,
-          volume: '$52.2M',
+          volume: `${silverTokens.toLocaleString()}`,
           trend: silverChange >= 0 ? 'up' : 'down'
         });
       }
@@ -113,11 +117,11 @@ export default function MarketsSection() {
 
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-secondary">Token Price</span>
+                  <span className="text-sm text-secondary">Price</span>
                   <span className="text-xl font-bold text-primary">{market.price}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-secondary">24h Volume</span>
+                  <span className="text-sm text-secondary">Token Volume</span>
                   <span className="text-sm font-medium text-secondary">{market.volume}</span>
                 </div>
               </div>

@@ -50,7 +50,6 @@ export default function Navigation() {
            {isConnected && walletAddress ? (
                 <div className="flex items-center gap-2">
                   <div className="flex items-center bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                     <span className="text-sm font-medium text-emerald-700">
                       {formatAddress(walletAddress)}
                     </span>

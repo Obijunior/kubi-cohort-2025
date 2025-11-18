@@ -6,7 +6,7 @@ import Navigation from '@/app/components/Navigation';
 import TokenizeAsset from '@/app/components/TokenizeAsset';
 import { useWallet } from '@/app/context/WalletContext';
 import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
-import { get } from 'http';
+import { POOL_CONFIGS } from '@/app/utils/poolConfig';
 
 type MineralPool = {
   id: string;
@@ -33,38 +33,8 @@ type UserPosition = {
 // Initialize mineral pools from mockData
 const initializeMineralPools = (): MineralPool[] => {
   const pools: MineralPool[] = [];
-  
-  const poolConfigs = [
-    {
-      key: 'oil' as const,
-      symbol: 'WTI',
-      name: 'Oil',
-      type: 'Energy',
-      liquidity: '$2.5M',
-      tradingFee: '0.3%',
-      tokensInPool: 500000
-    },
-    {
-      key: 'gold' as const,
-      symbol: 'XAU',
-      name: 'Gold',
-      type: 'Precious Metal',
-      liquidity: '$1.8M',
-      tradingFee: '0.25%',
-      tokensInPool: 400000
-    },
-    {
-      key: 'silver' as const,
-      symbol: 'XAG',
-      name: 'Silver',
-      type: 'Precious Metal',
-      liquidity: '$1.2M',
-      tradingFee: '0.35%',
-      tokensInPool: 350000
-    }
-  ];
 
-  poolConfigs.forEach(config => {
+  POOL_CONFIGS.forEach(config => {
     const mineralData = mockMinerals[config.key];
     if (mineralData && mineralData.priceHistory.length > 0) {
       pools.push({
@@ -253,7 +223,6 @@ export default function TradePage() {
                       </td>
                       <td className="px-6 py-4 text-primary">500,000</td>
                       <td className="px-6 py-4 text-primary">$1.8M</td>
-                      <td className="px-6 py-4 text-primary">$83.3M</td>
                       <td className="px-6 py-4 font-semibold text-green-600">$3,950</td>
                       <td className="px-6 py-4">
                         <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
@@ -271,7 +240,6 @@ export default function TradePage() {
                       </td>
                       <td className="px-6 py-4 text-primary">2,000,000</td>
                       <td className="px-6 py-4 text-primary">$1.2M</td>
-                      <td className="px-6 py-4 text-primary">$52.2M</td>
                       <td className="px-6 py-4 font-semibold text-green-600">$2,300</td>
                       <td className="px-6 py-4">
                         <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
