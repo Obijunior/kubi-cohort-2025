@@ -55,8 +55,8 @@ export default function TradePage() {
     {
       id: '1',
       symbol: 'WTI',
-      amount: 500,
-      entryPrice: 60.70,
+      amount: 100,
+      entryPrice: 55.70,
       mineralKey: 'oil'
     },
     {
