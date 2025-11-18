@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 type AssetType = 'oil' | 'gold' | 'silver' | 'platinum' | 'copper' | 'natural-gas';
 
-interface AssetFormData {
+export interface AssetFormData {
   assetType: AssetType | '';
   assetName: string;
   assetSymbol: string;
@@ -22,7 +22,11 @@ const ASSET_TYPES: { value: AssetType; label: string; description: string }[] = 
 //   { value: 'natural-gas', label: 'Natural Gas (NG)', description: 'Natural Gas Futures' },
 ];
 
-export default function TokenizeAsset() {
+interface TokenizeAssetProps {
+  onAssetTokenized: (data: AssetFormData) => void;
+}
+
+export default function TokenizeAsset({ onAssetTokenized }: TokenizeAssetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<AssetFormData>({
     assetType: '',
@@ -53,8 +57,11 @@ export default function TokenizeAsset() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Asset tokenized:', formData);
-    alert(`Asset "${formData.assetName}" tokenized successfully!`);
+    const finalFormData = {
+      ...formData,
+      assetSymbol: generateSymbol(formData.assetName, formData.assetType as AssetType),
+    };
+    onAssetTokenized(finalFormData);
     setIsOpen(false);
     setFormData({
       assetType: '',

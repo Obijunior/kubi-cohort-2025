@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Search, Building2, TrendingUp } from 'lucide-react';
 import Navigation from '@/app/components/Navigation';
-import TokenizeAsset from '@/app/components/TokenizeAsset';
+import TokenizeAsset, { type AssetFormData } from '@/app/components/TokenizeAsset';
 import { useWallet } from '@/app/context/WalletContext';
 import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
 import { POOL_CONFIGS } from '@/app/utils/poolConfig';
@@ -78,6 +78,51 @@ export default function TradePage() {
     }
   ]);
   const [closedPnL, setClosedPnL] = useState(0);
+
+  // Company Dashboard State
+  type CompanyAsset = {
+    symbol: string;
+    name: string;
+    tokensInPool: number;
+    price: number;
+    feePercentage: number;
+  };
+
+  const [companyAssets, setCompanyAssets] = useState<CompanyAsset[]>(() => POOL_CONFIGS.map(config => {
+    const mineralData = mockMinerals[config.key];
+    const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
+    return {
+      symbol: config.symbol,
+      name: config.name,
+      tokensInPool: config.tokensInPool,
+      price,
+      feePercentage: 0.25
+    };
+  }));
+
+  const handleTokenizeAsset = (newAssetData: AssetFormData) => {
+    if (!newAssetData.assetType) return;
+
+    const mineralData = mockMinerals[newAssetData.assetType as keyof typeof mockMinerals];
+    const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
+
+    const newAsset: CompanyAsset = {
+      symbol: newAssetData.assetSymbol,
+      name: newAssetData.assetName,
+      tokensInPool: parseInt(newAssetData.tokensToMint, 10),
+      price: price,
+      feePercentage: 0.25
+    };
+
+    setCompanyAssets(prevAssets => [...prevAssets, newAsset]);
+  };
+
+  const totalCompanyAssets = companyAssets.length;
+  const totalCompanyLiquidity = companyAssets.reduce((sum, asset) => sum + (asset.tokensInPool * asset.price), 0);
+  const totalFeesEarned = companyAssets.reduce((sum, asset) => {
+    // Estimate fees based on a trading volume assumption (e.g., 10% of liquidity traded monthly)
+    return sum + ((asset.tokensInPool * asset.price) * 0.10 * asset.feePercentage);
+  }, 0);
 
   const userPositions: UserPosition[] = (() => {
     return positionConfigs.map(config => {
@@ -163,22 +208,22 @@ export default function TradePage() {
                 <p className="text-secondary mt-1">Create and manage RWA tokens</p>
               </div>
               <div className="hover:bg-opacity-90 transition-rounded-lg">
-            <TokenizeAsset />
+            <TokenizeAsset onAssetTokenized={handleTokenizeAsset} />
             </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">Total Assets</p>
-                <p className="text-3xl font-bold text-primary">3</p>
+                <p className="text-3xl font-bold text-primary">{totalCompanyAssets}</p>
               </div>
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">Total Pool Liquidity</p>
-                <p className="text-3xl font-bold text-primary">$5.5M</p>
+                <p className="text-3xl font-bold text-primary">${(totalCompanyLiquidity / 1_000_000).toFixed(1)}M</p>
               </div>
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">Total Fees Earned</p>
-                <p className="text-3xl font-bold text-green-600">$12,450</p>
+                <p className="text-3xl font-bold text-green-600">${totalFeesEarned.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
               </div>
             </div>
 
@@ -199,57 +244,29 @@ export default function TradePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-200">
-                    <tr className="hover:bg-stone-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-primary">WTI</div>
-                        <div className="text-sm text-secondary">Oil</div>
-                      </td>
-                      <td className="px-6 py-4 text-primary">1,000,000</td>
-                      <td className="px-6 py-4 text-primary">$2.5M</td>
-                      <td className="px-6 py-4 font-semibold text-green-600">$6,200</td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
-                          Manage
-                        </button>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-stone-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-primary">XAU</div>
-                        <div className="text-sm text-secondary">Gold</div>
-                      </td>
-                      <td className="px-6 py-4 text-primary">500,000</td>
-                      <td className="px-6 py-4 text-primary">$1.8M</td>
-                      <td className="px-6 py-4 font-semibold text-green-600">$3,950</td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
-                          Manage
-                        </button>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-stone-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-primary">XAG</div>
-                        <div className="text-sm text-secondary">Silver</div>
-                      </td>
-                      <td className="px-6 py-4 text-primary">2,000,000</td>
-                      <td className="px-6 py-4 text-primary">$1.2M</td>
-                      <td className="px-6 py-4 font-semibold text-green-600">$2,300</td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
-                          Manage
-                        </button>
-                      </td>
-                    </tr>
+                    {companyAssets.map((asset) => {
+                      const assetLiquidity = asset.tokensInPool * asset.price;
+                      const estimatedFeesPerAsset = (assetLiquidity * 0.10 * asset.feePercentage);
+                      return (
+                        <tr key={asset.symbol} className="hover:bg-stone-50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-semibold text-primary">{asset.symbol}</div>
+                            <div className="text-sm text-secondary">{asset.name}</div>
+                          </td>
+                          <td className="px-6 py-4 text-primary">{asset.tokensInPool.toLocaleString()}</td>
+                          <td className="px-6 py-4 text-primary">${(assetLiquidity / 1_000_000).toFixed(2)}M</td>
+                          <td className="px-6 py-4 font-semibold text-green-600">${estimatedFeesPerAsset.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
+                          <td className="px-6 py-4">
+                            <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
+                              Manage
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -525,7 +542,6 @@ export default function TradePage() {
                           }
                         ]);
 
-                        alert(`Buy order executed: ${amount} ${selectedPool.symbol} at $${currentPrice.toFixed(2)}`);
                         setSelectedPool(null);
                         setTradeAmount('');
                       }
