@@ -15,16 +15,20 @@ const getMineralData = async (req, res) => {
         }
     }
     catch (error) {
+        console.error('❌ Error in getMineralData:', error);
         res.status(500).json({ error: 'Internal server error', message: error.message });
     }
 };
 exports.getMineralData = getMineralData;
 const getAllMinerals = async (req, res) => {
     try {
+        console.log('📍 Fetching latest mineral prices...');
         const minerals = await (0, metalApiService_1.getLatestMineralPrices)();
+        console.log('✅ Successfully fetched minerals:', Object.keys(minerals));
         res.json(minerals);
     }
     catch (error) {
+        console.error('❌ Error in getAllMinerals:', error);
         res.status(500).json({ error: 'Internal server error', message: error.message });
     }
 };
