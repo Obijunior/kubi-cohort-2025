@@ -12,8 +12,6 @@ type MineralOverview = {
   currentPrice: string;
   change: number;
   trend: 'up' | 'down';
-  description: string;
-  icon: string;
 };
 
 const defaultMinerals: MineralOverview[] = [
@@ -24,8 +22,6 @@ const defaultMinerals: MineralOverview[] = [
     currentPrice: 'n/a',
     change: 0,
     trend: 'up',
-    description: 'West Texas Intermediate crude oil futures',
-    icon: ''
   },
   {
     id: 'gold',
@@ -34,8 +30,6 @@ const defaultMinerals: MineralOverview[] = [
     currentPrice: 'n/a',
     change: 0,
     trend: 'up',
-    description: 'Precious metal commodity futures',
-    icon: ''
   },
   {
     id: 'silver',
@@ -44,8 +38,6 @@ const defaultMinerals: MineralOverview[] = [
     currentPrice: 'n/a',
     change: 0,
     trend: 'up',
-    description: 'Industrial and precious metal futures',
-    icon: ''
   }
 ];
 
@@ -56,7 +48,6 @@ export default function MarketsPage() {
 
   useEffect(() => {
     try {
-      console.log('📦 Loading mock mineral data...');
       
       const updatedMinerals = defaultMinerals.map(defaultMineral => {
         const fetchedMineral = mockMinerals[defaultMineral.id];
@@ -77,7 +68,7 @@ export default function MarketsPage() {
       
       setMinerals(updatedMinerals);
       setHasDataError(false);
-      console.log('✅ Successfully loaded mock mineral data');
+      console.log('Successfully loaded mineral data');
     } catch (error) {
       console.error('Error loading mock data:', error);
       setHasDataError(true);
@@ -108,25 +99,6 @@ export default function MarketsPage() {
               <p className="text-sm text-secondary">Active Markets</p>
             </div>
           </div>
-
-          {/* Stats Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm">
-              <p className="text-sm text-secondary mb-1">Total Volume</p>
-              <p className="text-2xl font-bold text-primary">$261M</p>
-            </div>
-            <div className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm">
-              <p className="text-sm text-secondary mb-1">Average Change</p>
-              <p className="text-2xl font-bold text-green-600">+2.4%</p>
-            </div>
-            <div className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm">
-              <p className="text-sm text-secondary mb-1">Market Status</p>
-              <p className="text-2xl font-bold text-primary flex items-center gap-2">
-                <span className={`w-3 h-3 rounded-full animate-pulse ${hasDataError ? 'bg-red-500' : 'bg-green-500'}`}></span>
-                {hasDataError ? 'Error fetching data' : 'Live'}
-              </p>
-            </div>
-          </div>
         </section>
 
         {/* Markets Grid */}
@@ -134,7 +106,6 @@ export default function MarketsPage() {
           <h2 className="text-2xl font-bold text-primary mb-6">Available Markets</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loading && <p>Loading markets...</p>}
             {!loading && minerals.map((mineral) => (
               <div
                 key={mineral.id}
@@ -183,11 +154,6 @@ export default function MarketsPage() {
                       {mineral.currentPrice}
                     </p>
                   </div>
-
-                  {/* Description */}
-                  <p className="text-sm text-secondary line-clamp-2">
-                    {mineral.description}
-                  </p>
 
                   {/* Stats Row */}
                   <div className="grid grid-cols-2 gap-3 pt-2">

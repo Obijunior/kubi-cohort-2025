@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import WalletConnector from './WalletConnector';
-import WalletModal from './WalletModal';
+import XRPLWalletModal from './XRPLWalletModal';
 import { useWallet } from '@/app/context/WalletContext';
 
 
@@ -49,7 +49,7 @@ export default function Navigation() {
 
            {isConnected && walletAddress ? (
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
+                  <div className="flex items-center bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                     <span className="text-sm font-medium text-emerald-700">
                       {formatAddress(walletAddress)}
@@ -71,7 +71,7 @@ export default function Navigation() {
         </div>
       </div>
     </nav>
-    <WalletModal
+    <XRPLWalletModal
       isOpen={isWalletModalOpen}
       onClose={() => setIsWalletModalOpen(false)}
       onConnect={handleConnectWallet}

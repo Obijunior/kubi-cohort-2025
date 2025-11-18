@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownRight, Search, Building2, TrendingUp } from 'lucide-react';
 import Navigation from '@/app/components/Navigation';
 import TokenizeAsset from '@/app/components/TokenizeAsset';
 import { useWallet } from '@/app/context/WalletContext';
+import { mockMinerals } from '@/app/utils/mockData';
 
 type MineralPool = {
   id: string;
@@ -35,45 +36,68 @@ export default function TradePage() {
   const [selectedPool, setSelectedPool] = useState<MineralPool | null>(null);
   const [tradeAmount, setTradeAmount] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [mineralPools, setMineralPools] = useState<MineralPool[]>([]);
 
-  const mineralPools: MineralPool[] = [
-    {
-      id: 'oil',
-      symbol: 'WTI',
-      name: 'Oil',
-      type: 'Energy',
-      price: 76.45,
-      change24h: 2.4,
-      volume24h: '$125.5M',
-      liquidity: '$2.5M',
-      tradingFee: '0.3%',
-      tokensInPool: 500000
-    },
-    {
-      id: 'gold',
-      symbol: 'XAU',
-      name: 'Gold',
-      type: 'Precious Metal',
-      price: 2089.30,
-      change24h: 1.8,
-      volume24h: '$83.3M',
-      liquidity: '$1.8M',
-      tradingFee: '0.25%',
-      tokensInPool: 400000
-    },
-    {
-      id: 'silver',
-      symbol: 'XAG',
-      name: 'Silver',
-      type: 'Precious Metal',
-      price: 31.20,
-      change24h: 3.1,
-      volume24h: '$52.2M',
-      liquidity: '$1.2M',
-      tradingFee: '0.35%',
-      tokensInPool: 350000
+  // Initialize mineral pools from mockData
+  useEffect(() => {
+    const pools: MineralPool[] = [];
+    
+    // Oil pool
+    if (mockMinerals.oil && mockMinerals.oil.priceHistory.length > 0) {
+      const oilPrice = mockMinerals.oil.priceHistory[mockMinerals.oil.priceHistory.length - 1].price;
+      const oilPrevPrice = mockMinerals.oil.priceHistory[mockMinerals.oil.priceHistory.length - 2]?.price || oilPrice;
+      pools.push({
+        id: 'oil',
+        symbol: 'WTI',
+        name: 'Oil',
+        type: 'Energy',
+        price: oilPrice,
+        change24h: parseFloat((((oilPrice - oilPrevPrice) / oilPrevPrice) * 100).toFixed(2)),
+        volume24h: '$125.5M',
+        liquidity: '$2.5M',
+        tradingFee: '0.3%',
+        tokensInPool: 500000
+      });
     }
-  ];
+
+    // Gold pool
+    if (mockMinerals.gold && mockMinerals.gold.priceHistory.length > 0) {
+      const goldPrice = mockMinerals.gold.priceHistory[mockMinerals.gold.priceHistory.length - 1].price;
+      const goldPrevPrice = mockMinerals.gold.priceHistory[mockMinerals.gold.priceHistory.length - 2]?.price || goldPrice;
+      pools.push({
+        id: 'gold',
+        symbol: 'XAU',
+        name: 'Gold',
+        type: 'Precious Metal',
+        price: goldPrice,
+        change24h: parseFloat((((goldPrice - goldPrevPrice) / goldPrevPrice) * 100).toFixed(2)),
+        volume24h: '$83.3M',
+        liquidity: '$1.8M',
+        tradingFee: '0.25%',
+        tokensInPool: 400000
+      });
+    }
+
+    // Silver pool
+    if (mockMinerals.silver && mockMinerals.silver.priceHistory.length > 0) {
+      const silverPrice = mockMinerals.silver.priceHistory[mockMinerals.silver.priceHistory.length - 1].price;
+      const silverPrevPrice = mockMinerals.silver.priceHistory[mockMinerals.silver.priceHistory.length - 2]?.price || silverPrice;
+      pools.push({
+        id: 'silver',
+        symbol: 'XAG',
+        name: 'Silver',
+        type: 'Precious Metal',
+        price: silverPrice,
+        change24h: parseFloat((((silverPrice - silverPrevPrice) / silverPrevPrice) * 100).toFixed(2)),
+        volume24h: '$52.2M',
+        liquidity: '$1.2M',
+        tradingFee: '0.35%',
+        tokensInPool: 350000
+      });
+    }
+
+    setMineralPools(pools);
+  }, []);
 
   const userPositions: UserPosition[] = [
     {

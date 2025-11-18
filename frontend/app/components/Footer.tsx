@@ -18,33 +18,6 @@ export default function Footer() {
               Learn, trade, and grow your real estate portfolio through tokenized futures.
             </p>
           </div>
-          
-          <div>
-            <h4 className="font-bold mb-3 text-white/90">Markets</h4>
-            <ul className="space-y-2 text-sm text-white/60">
-              <li><a href="#" className="hover:text-white transition">Browse Markets</a></li>
-              <li><a href="#" className="hover:text-white transition">Price Charts</a></li>
-              <li><a href="#" className="hover:text-white transition">Market Analysis</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-bold mb-3 text-white/90">Learn</h4>
-            <ul className="space-y-2 text-sm text-white/60">
-              <li><a href="#" className="hover:text-white transition">Getting Started</a></li>
-              <li><a href="#" className="hover:text-white transition">Educational Content</a></li>
-              <li><a href="#" className="hover:text-white transition">Trading Guides</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-bold mb-3 text-white/90">Company</h4>
-            <ul className="space-y-2 text-sm text-white/60">
-              <li><a href="#" className="hover:text-white transition">About Us</a></li>
-              <li><a href="#" className="hover:text-white transition">Support</a></li>
-              <li><a href="#" className="hover:text-white transition">Legal</a></li>
-            </ul>
-          </div>
         </div>
         
         <div className="border-t border-white/10 pt-8 text-center text-sm text-white/60">
