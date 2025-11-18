@@ -15,7 +15,6 @@ type MineralPool = {
   type: string;
   price: number;
   change24h: number;
-  volume24h: string;
   liquidity: string;
   tradingFee: string;
   tokensInPool: number;
@@ -41,7 +40,6 @@ const initializeMineralPools = (): MineralPool[] => {
       symbol: 'WTI',
       name: 'Oil',
       type: 'Energy',
-      volume24h: '$125.5M',
       liquidity: '$2.5M',
       tradingFee: '0.3%',
       tokensInPool: 500000
@@ -51,7 +49,6 @@ const initializeMineralPools = (): MineralPool[] => {
       symbol: 'XAU',
       name: 'Gold',
       type: 'Precious Metal',
-      volume24h: '$83.3M',
       liquidity: '$1.8M',
       tradingFee: '0.25%',
       tokensInPool: 400000
@@ -61,7 +58,6 @@ const initializeMineralPools = (): MineralPool[] => {
       symbol: 'XAG',
       name: 'Silver',
       type: 'Precious Metal',
-      volume24h: '$52.2M',
       liquidity: '$1.2M',
       tradingFee: '0.35%',
       tokensInPool: 350000
@@ -78,7 +74,6 @@ const initializeMineralPools = (): MineralPool[] => {
         type: config.type,
         price: getCurrentPrice(mineralData.priceHistory),
         change24h: calculatePriceChange(mineralData.priceHistory),
-        volume24h: config.volume24h,
         liquidity: config.liquidity,
         tradingFee: config.tradingFee,
         tokensInPool: config.tokensInPool
@@ -96,25 +91,25 @@ export default function TradePage() {
   const [tradeAmount, setTradeAmount] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [mineralPools] = useState<MineralPool[]>(initializeMineralPools());
+  const [positionConfigs, setPositionConfigs] = useState([
+    {
+      id: '1',
+      symbol: 'WTI',
+      amount: 500,
+      entryPrice: 60.70,
+      mineralKey: 'oil' as const
+    },
+    {
+      id: '2',
+      symbol: 'XAU',
+      amount: 10,
+      entryPrice: 4000.50,
+      mineralKey: 'gold' as const
+    }
+  ]);
+  const [closedPnL, setClosedPnL] = useState(0);
 
   const userPositions: UserPosition[] = (() => {
-    const positionConfigs = [
-      {
-        id: '1',
-        symbol: 'WTI',
-        amount: 500,
-        entryPrice: 60.70,
-        mineralKey: 'oil' as const
-      },
-      {
-        id: '2',
-        symbol: 'XAU',
-        amount: 10,
-        entryPrice: 4000.50,
-        mineralKey: 'gold' as const
-      }
-    ];
-
     return positionConfigs.map(config => {
       const currentPrice = getCurrentPrice(mockMinerals[config.mineralKey].priceHistory);
       const pnl = (currentPrice - config.entryPrice) * config.amount;
@@ -133,9 +128,10 @@ export default function TradePage() {
   })();
 
   const portfolioValue = userPositions.reduce((sum, position) => sum + position.amount * position.currentPrice, 0);
-  const totalPnL = userPositions.reduce((sum, position) => sum + position.pnl, 0);
+  const openPnL = userPositions.reduce((sum, position) => sum + position.pnl, 0);
+  const totalPnL = openPnL + closedPnL;
   const totalInitialValue = userPositions.reduce((sum, position) => sum + position.amount * position.entryPrice, 0);
-  const totalPnLPercent = totalInitialValue > 0 ? (totalPnL / totalInitialValue) * 100 : 0;
+  const totalPnLPercent = totalInitialValue > 0 ? (openPnL / totalInitialValue) * 100 : 0;
 
   const filteredPools = mineralPools.filter(pool =>
     pool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -227,7 +223,6 @@ export default function TradePage() {
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Asset</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Total Supply</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Pool Liquidity</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Volume</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Fees Earned</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
@@ -241,7 +236,6 @@ export default function TradePage() {
                       </td>
                       <td className="px-6 py-4 text-primary">1,000,000</td>
                       <td className="px-6 py-4 text-primary">$2.5M</td>
-                      <td className="px-6 py-4 text-primary">$125.5M</td>
                       <td className="px-6 py-4 font-semibold text-green-600">$6,200</td>
                       <td className="px-6 py-4">
                         <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
@@ -319,7 +313,7 @@ export default function TradePage() {
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">Total P&L</p>
                 <p className={`text-3xl font-bold ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${totalPnL.toFixed(2)}
+                  {totalPnL < 0 ? '-' : ''}${Math.abs(totalPnL).toFixed(2)}
                 </p>
               </div>
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
@@ -333,12 +327,12 @@ export default function TradePage() {
             </section>
 
             {/* Your Positions */}
-            {userPositions.length > 0 && (
-              <section className="mb-8">
-                <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-stone-100">
-                    <h2 className="text-2xl font-bold text-primary">Your Positions</h2>
-                  </div>
+            <section className="mb-8">
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-stone-100">
+                  <h2 className="text-2xl font-bold text-primary">Your Positions</h2>
+                </div>
+                {userPositions.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-stone-50">
@@ -360,12 +354,20 @@ export default function TradePage() {
                             <td className="px-6 py-4 text-primary">${position.currentPrice.toFixed(2)}</td>
                             <td className="px-6 py-4">
                               <div className={position.pnl >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                <div className="font-semibold">{position.pnl.toFixed(2)}</div>
-                                <div className="text-xs">{position.pnlPercent >= 0 ? '+' : ''}{position.pnlPercent.toFixed(2)}%</div>
+                                <div className="font-semibold">{position.pnl < 0 ? '-' : ''}${Math.abs(position.pnl).toFixed(2)}</div>
+                                <div className="text-xs">{position.pnlPercent >= 0 ? '+' : '-'}{Math.abs(position.pnlPercent).toFixed(2)}%</div>
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <button className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+                              <button 
+                                onClick={() => {
+                                  // Add the position's P&L to closed P&L
+                                  setClosedPnL(closedPnL + position.pnl);
+                                  // Remove position from configs
+                                  setPositionConfigs(positionConfigs.filter(config => config.id !== position.id));
+                                }}
+                                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                              >
                                 Close
                               </button>
                             </td>
@@ -374,9 +376,13 @@ export default function TradePage() {
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </section>
-            )}
+                ) : (
+                  <div className="p-6 text-center">
+                    <p className="text-secondary">No active positions. Start trading to create positions.</p>
+                  </div>
+                )}
+              </div>
+            </section>
 
             {/* Available Trading Pools */}
             <section>
@@ -406,7 +412,6 @@ export default function TradePage() {
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Type</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Price</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Change</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Volume</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Liquidity</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Fee</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
@@ -437,7 +442,6 @@ export default function TradePage() {
                               <span>{pool.change24h >= 0 ? '+' : ''}{pool.change24h}%</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-primary">{pool.volume24h}</td>
                           <td className="px-6 py-4">
                             <div>
                               <div className="font-semibold text-primary">{pool.liquidity}</div>
@@ -530,9 +534,34 @@ export default function TradePage() {
               <div className="grid grid-cols-2 gap-3 pt-4">
                 <button
                   onClick={() => {
-                    alert(`Buy order placed for ${tradeAmount} ${selectedPool.symbol}`);
-                    setSelectedPool(null);
-                    setTradeAmount('');
+                    const amount = parseFloat(tradeAmount);
+                    if (amount > 0 && selectedPool) {
+                      const mineralKey = (['oil', 'gold', 'silver'] as const).find(
+                        key => mockMinerals[key] && 
+                        getCurrentPrice(mockMinerals[key].priceHistory).toFixed(2) === selectedPool.price.toFixed(2)
+                      );
+
+                      if (mineralKey) {
+                        const currentPrice = getCurrentPrice(mockMinerals[mineralKey].priceHistory);
+                        
+                        // Create new position with unique ID
+                        const newId = (Math.max(...positionConfigs.map(p => parseInt(p.id)), 0) + 1).toString();
+                        setPositionConfigs([
+                          ...positionConfigs,
+                          {
+                            id: newId,
+                            symbol: selectedPool.symbol,
+                            amount,
+                            entryPrice: currentPrice,
+                            mineralKey
+                          }
+                        ]);
+
+                        alert(`Buy order executed: ${amount} ${selectedPool.symbol} at $${currentPrice.toFixed(2)}`);
+                        setSelectedPool(null);
+                        setTradeAmount('');
+                      }
+                    }
                   }}
                   disabled={!tradeAmount || !walletConnected}
                   className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -541,14 +570,12 @@ export default function TradePage() {
                 </button>
                 <button
                   onClick={() => {
-                    alert(`Sell order placed for ${tradeAmount} ${selectedPool.symbol}`);
                     setSelectedPool(null);
                     setTradeAmount('');
                   }}
-                  disabled={!tradeAmount || !walletConnected}
-                  className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  className="px-4 py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors font-semibold"
                 >
-                  Sell
+                  Cancel
                 </button>
               </div>
 
