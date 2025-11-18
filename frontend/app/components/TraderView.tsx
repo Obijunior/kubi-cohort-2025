@@ -13,6 +13,7 @@ const typedMockMinerals: Record<string, MockMineralEntry> = mockMinerals;
 
 type MineralPool = {
   id: string;
+  key: string;
   symbol: string;
   name: string;
   type: string;
@@ -56,7 +57,8 @@ export default function TraderView({
     const liquidity = asset.tokensInPool * asset.price;
 
     return {
-      id: asset.key,
+      id: asset.symbol,
+      key: asset.key,
       symbol: asset.symbol,
       name: asset.name,
       type: 'Commodity', // Assuming all are commodities
@@ -71,6 +73,7 @@ export default function TraderView({
   const [selectedPool, setSelectedPool] = useState<MineralPool | null>(null);
   const [tradeAmount, setTradeAmount] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   // NEW STATE: Stores the result of the async conversion
   const [estimatedXRP, setEstimatedXRP] = useState<string>(''); 
 
@@ -102,7 +105,16 @@ export default function TraderView({
     pool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     pool.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(filteredPools.length / itemsPerPage) || 1;
+  const paginatedPools = filteredPools.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
   
+
+
   // Handles the asynchronous price calculation
   useEffect(() => {
     const tradeValue = parseFloat(tradeAmount);
@@ -219,7 +231,10 @@ export default function TraderView({
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Search by name or symbol..."
                 className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-accent focus:border-transparent"
               />
@@ -240,7 +255,7 @@ export default function TraderView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
-                {filteredPools.map(pool => (
+                {paginatedPools.map(pool => (
                   <tr key={pool.id} className="hover:bg-stone-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-primary">{pool.symbol}</div>
@@ -285,6 +300,30 @@ export default function TraderView({
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          <div className="p-4 border-t border-stone-100 flex justify-between items-center text-sm">
+            <span className="text-secondary">
+              Page {currentPage} of {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border border-stone-200 rounded-md hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 border border-stone-200 rounded-md hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -303,7 +342,10 @@ export default function TraderView({
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Search by name or symbol..."
                 className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-accent focus:border-transparent"
               />
@@ -378,15 +420,9 @@ export default function TraderView({
               <div className="grid grid-cols-2 gap-3 pt-4">
                 <button
                   onClick={() => {
-                    const amount = parseFloat(tradeAmount);
-                    if (amount > 0 && selectedPool) {
-                      const mineralKey = (['oil', 'gold', 'silver'] as const).find(
-                        key => typedMockMinerals[key] && 
-                        getCurrentPrice(typedMockMinerals[key].priceHistory).toFixed(2) === selectedPool.price.toFixed(2)
-                      );
-
-                      if (mineralKey) {
-                        const currentPrice = getCurrentPrice(typedMockMinerals[mineralKey].priceHistory);
+                    const mineralKey = selectedPool.key;
+                      if (mineralKey && ['oil', 'gold', 'silver'].includes(mineralKey)) {
+                        const currentPrice = getCurrentPrice(typedMockMinerals[mineralKey as 'oil' | 'gold' | 'silver'].priceHistory);
                         
                         const newId = (Math.max(...positionConfigs.map(p => parseInt(p.id)), 0) + 1).toString();
                         setPositionConfigs([
@@ -394,9 +430,9 @@ export default function TraderView({
                           {
                             id: newId,
                             symbol: selectedPool.symbol,
-                            amount,
+                            amount: parseFloat(tradeAmount),
                             entryPrice: currentPrice,
-                            mineralKey
+                            mineralKey: mineralKey as 'oil' | 'gold' | 'silver'
                           }
                         ]);
 
@@ -404,7 +440,6 @@ export default function TraderView({
                         setTradeAmount('');
                         setEstimatedXRP(''); // Reset XRP estimate on successful trade
                       }
-                    }
                   }}
                   disabled={!tradeAmount || !walletConnected || estimatedXRP === 'N/A' || estimatedXRP === ''}
                   className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
