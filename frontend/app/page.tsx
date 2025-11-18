@@ -27,7 +27,7 @@ export default function RealEstateQuest() {
         scrollY={scrollY}
       />
       <MarketsSection />
-      <TradingPanel />
+      {/* <TradingPanel /> */}
       <Footer />
     </div>
   );

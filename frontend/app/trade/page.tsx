@@ -3,8 +3,16 @@
 import React, { useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Search, Building2, TrendingUp } from 'lucide-react';
 import Navigation from '@/app/components/Navigation';
-import TokenizeAsset from '@/app/components/TokenizeAsset';
+import TokenizeAsset, { type AssetFormData } from '@/app/components/TokenizeAsset';
 import { useWallet } from '@/app/context/WalletContext';
+import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
+
+type MockMineralEntry = {
+  priceHistory: { date: string; price: number; }[];
+};
+
+const typedMockMinerals: Record<string, MockMineralEntry> = mockMinerals;
+import { POOL_CONFIGS } from '@/app/utils/poolConfig';
 
 type MineralPool = {
   id: string;
@@ -13,7 +21,6 @@ type MineralPool = {
   type: string;
   price: number;
   change24h: number;
-  volume24h: string;
   liquidity: string;
   tradingFee: string;
   tokensInPool: number;
@@ -29,76 +36,131 @@ type UserPosition = {
   pnlPercent: number;
 };
 
+type PositionConfig = {
+  id: string;
+  symbol: string;
+  amount: number;
+  entryPrice: number;
+  mineralKey: 'oil' | 'gold' | 'silver';
+};
+
+// Initialize mineral pools from mockData
+const initializeMineralPools = (): MineralPool[] => {
+  const pools: MineralPool[] = [];
+
+  POOL_CONFIGS.forEach(config => {
+    const mineralData = typedMockMinerals[config.key];
+    if (mineralData && mineralData.priceHistory.length > 0) {
+      pools.push({
+        id: config.key,
+        symbol: config.symbol,
+        name: config.name,
+        type: config.type,
+        price: getCurrentPrice(mineralData.priceHistory),
+        change24h: calculatePriceChange(mineralData.priceHistory),
+        liquidity: config.liquidity,
+        tradingFee: config.tradingFee,
+        tokensInPool: config.tokensInPool
+      });
+    }
+  });
+
+  return pools;
+};
+
 export default function TradePage() {
   const { isConnected: walletConnected } = useWallet();
   const [activeView, setActiveView] = useState<'company' | 'trader'>('trader');
   const [selectedPool, setSelectedPool] = useState<MineralPool | null>(null);
   const [tradeAmount, setTradeAmount] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-
-  const mineralPools: MineralPool[] = [
-    {
-      id: 'oil',
-      symbol: 'WTI',
-      name: 'Oil',
-      type: 'Energy',
-      price: 76.45,
-      change24h: 2.4,
-      volume24h: '$125.5M',
-      liquidity: '$2.5M',
-      tradingFee: '0.3%',
-      tokensInPool: 500000
-    },
-    {
-      id: 'gold',
-      symbol: 'XAU',
-      name: 'Gold',
-      type: 'Precious Metal',
-      price: 2089.30,
-      change24h: 1.8,
-      volume24h: '$83.3M',
-      liquidity: '$1.8M',
-      tradingFee: '0.25%',
-      tokensInPool: 400000
-    },
-    {
-      id: 'silver',
-      symbol: 'XAG',
-      name: 'Silver',
-      type: 'Precious Metal',
-      price: 31.20,
-      change24h: 3.1,
-      volume24h: '$52.2M',
-      liquidity: '$1.2M',
-      tradingFee: '0.35%',
-      tokensInPool: 350000
-    }
-  ];
-
-  const userPositions: UserPosition[] = [
+  const [mineralPools] = useState<MineralPool[]>(initializeMineralPools());
+  const [positionConfigs, setPositionConfigs] = useState<PositionConfig[]>([
     {
       id: '1',
       symbol: 'WTI',
       amount: 500,
-      entryPrice: 74.70,
-      currentPrice: 76.45,
-      pnl: 875.00,
-      pnlPercent: 2.34
+      entryPrice: 60.70,
+      mineralKey: 'oil'
     },
     {
       id: '2',
       symbol: 'XAU',
       amount: 10,
-      entryPrice: 2053.50,
-      currentPrice: 2089.30,
-      pnl: 357.80,
-      pnlPercent: 1.74
+      entryPrice: 4000.50,
+      mineralKey: 'gold'
     }
-  ];
+  ]);
+  const [closedPnL, setClosedPnL] = useState(0);
 
-  const portfolioValue = 1225.50;
-  const totalPnL = 1232.80;
-  const totalPnLPercent = 2.01;
+  // Company Dashboard State
+  type CompanyAsset = {
+    symbol: string;
+    name: string;
+    tokensInPool: number;
+    price: number;
+    feePercentage: number;
+  };
+
+  const [companyAssets, setCompanyAssets] = useState<CompanyAsset[]>(() => POOL_CONFIGS.map(config => {
+    const mineralData = typedMockMinerals[config.key];
+    const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
+    return {
+      symbol: config.symbol,
+      name: config.name,
+      tokensInPool: config.tokensInPool,
+      price,
+      feePercentage: 0.25
+    };
+  }));
+
+  const handleTokenizeAsset = (newAssetData: AssetFormData) => {
+    if (!newAssetData.assetType) return;
+
+    const mineralData = typedMockMinerals[newAssetData.assetType];
+    const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
+
+    const newAsset: CompanyAsset = {
+      symbol: newAssetData.assetSymbol,
+      name: newAssetData.assetName,
+      tokensInPool: parseInt(newAssetData.tokensToMint, 10),
+      price: price,
+      feePercentage: 0.25
+    };
+
+    setCompanyAssets(prevAssets => [...prevAssets, newAsset]);
+  };
+
+  const totalCompanyAssets = companyAssets.length;
+  const totalCompanyLiquidity = companyAssets.reduce((sum, asset) => sum + (asset.tokensInPool * asset.price), 0);
+  const totalFeesEarned = companyAssets.reduce((sum, asset) => {
+    // Estimate fees based on a trading volume assumption (e.g., 10% of liquidity traded monthly)
+    return sum + ((asset.tokensInPool * asset.price) * 0.10 * asset.feePercentage);
+  }, 0);
+
+  const userPositions: UserPosition[] = (() => {
+    return positionConfigs.map(config => {
+      const currentPrice = getCurrentPrice(typedMockMinerals[config.mineralKey].priceHistory);
+      const pnl = (currentPrice - config.entryPrice) * config.amount;
+      const pnlPercent = ((currentPrice - config.entryPrice) / config.entryPrice) * 100;
+
+      return {
+        id: config.id,
+        symbol: config.symbol,
+        amount: config.amount,
+        entryPrice: config.entryPrice,
+        currentPrice,
+        pnl,
+        pnlPercent
+      };
+    });
+  })();
+
+  const portfolioValue = userPositions.reduce((sum, position) => sum + position.amount * position.currentPrice, 0);
+  const openPnL = userPositions.reduce((sum, position) => sum + position.pnl, 0);
+  const totalPnL = openPnL + closedPnL;
+  const totalInitialValue = userPositions.reduce((sum, position) => sum + position.amount * position.entryPrice, 0);
+  const totalPnLPercent = totalInitialValue > 0 ? (openPnL / totalInitialValue) * 100 : 0;
 
   const filteredPools = mineralPools.filter(pool =>
     pool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -160,22 +222,22 @@ export default function TradePage() {
                 <p className="text-secondary mt-1">Create and manage RWA tokens</p>
               </div>
               <div className="hover:bg-opacity-90 transition-rounded-lg">
-            <TokenizeAsset />
+            <TokenizeAsset onAssetTokenized={handleTokenizeAsset} />
             </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">Total Assets</p>
-                <p className="text-3xl font-bold text-primary">3</p>
+                <p className="text-3xl font-bold text-primary">{totalCompanyAssets}</p>
               </div>
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">Total Pool Liquidity</p>
-                <p className="text-3xl font-bold text-primary">$5.5M</p>
+                <p className="text-3xl font-bold text-primary">${(totalCompanyLiquidity / 1_000_000).toFixed(1)}M</p>
               </div>
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">Total Fees Earned</p>
-                <p className="text-3xl font-bold text-green-600">$12,450</p>
+                <p className="text-3xl font-bold text-green-600">${totalFeesEarned.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
               </div>
             </div>
 
@@ -190,67 +252,35 @@ export default function TradePage() {
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Asset</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Total Supply</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Pool Liquidity</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Volume</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Fees Earned</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-200">
-                    <tr className="hover:bg-stone-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-primary">WTI</div>
-                        <div className="text-sm text-secondary">Oil</div>
-                      </td>
-                      <td className="px-6 py-4 text-primary">1,000,000</td>
-                      <td className="px-6 py-4 text-primary">$2.5M</td>
-                      <td className="px-6 py-4 text-primary">$125.5M</td>
-                      <td className="px-6 py-4 font-semibold text-green-600">$6,200</td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
-                          Manage
-                        </button>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-stone-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-primary">XAU</div>
-                        <div className="text-sm text-secondary">Gold</div>
-                      </td>
-                      <td className="px-6 py-4 text-primary">500,000</td>
-                      <td className="px-6 py-4 text-primary">$1.8M</td>
-                      <td className="px-6 py-4 text-primary">$83.3M</td>
-                      <td className="px-6 py-4 font-semibold text-green-600">$3,950</td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
-                          Manage
-                        </button>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-stone-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-primary">XAG</div>
-                        <div className="text-sm text-secondary">Silver</div>
-                      </td>
-                      <td className="px-6 py-4 text-primary">2,000,000</td>
-                      <td className="px-6 py-4 text-primary">$1.2M</td>
-                      <td className="px-6 py-4 text-primary">$52.2M</td>
-                      <td className="px-6 py-4 font-semibold text-green-600">$2,300</td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
-                          Manage
-                        </button>
-                      </td>
-                    </tr>
+                    {companyAssets.map((asset) => {
+                      const assetLiquidity = asset.tokensInPool * asset.price;
+                      const estimatedFeesPerAsset = (assetLiquidity * 0.10 * asset.feePercentage);
+                      return (
+                        <tr key={asset.symbol} className="hover:bg-stone-50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-semibold text-primary">{asset.symbol}</div>
+                            <div className="text-sm text-secondary">{asset.name}</div>
+                          </td>
+                          <td className="px-6 py-4 text-primary">{asset.tokensInPool.toLocaleString()}</td>
+                          <td className="px-6 py-4 text-primary">${(assetLiquidity / 1_000_000).toFixed(2)}M</td>
+                          <td className="px-6 py-4 font-semibold text-green-600">${estimatedFeesPerAsset.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
+                          <td className="px-6 py-4">
+                            <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">Pool Active</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <button className="text-accent hover:text-opacity-80 transition-colors text-sm font-medium">
+                              Manage
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -281,8 +311,8 @@ export default function TradePage() {
               </div>
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">Total P&L</p>
-                <p className="text-3xl font-bold text-green-600">
-                  ${totalPnL.toFixed(2)}
+                <p className={`text-3xl font-bold ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {totalPnL < 0 ? '-' : ''}${Math.abs(totalPnL).toFixed(2)}
                 </p>
               </div>
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
@@ -291,17 +321,17 @@ export default function TradePage() {
               </div>
               <div className="bg-white rounded-lg p-6 border border-stone-200 shadow-sm">
                 <p className="text-sm text-secondary mb-2">24h Change</p>
-                <p className="text-3xl font-bold text-green-600">+{totalPnLPercent.toFixed(2)}%</p>
+                <p className={`text-3xl font-bold ${totalPnLPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>{totalPnLPercent >= 0 ? '+' : ''}{totalPnLPercent.toFixed(2)}%</p>
               </div>
             </section>
 
             {/* Your Positions */}
-            {userPositions.length > 0 && (
-              <section className="mb-8">
-                <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-stone-100">
-                    <h2 className="text-2xl font-bold text-primary">Your Positions</h2>
-                  </div>
+            <section className="mb-8">
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-stone-100">
+                  <h2 className="text-2xl font-bold text-primary">Your Positions</h2>
+                </div>
+                {userPositions.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-stone-50">
@@ -322,13 +352,21 @@ export default function TradePage() {
                             <td className="px-6 py-4 text-primary">${position.entryPrice.toFixed(2)}</td>
                             <td className="px-6 py-4 text-primary">${position.currentPrice.toFixed(2)}</td>
                             <td className="px-6 py-4">
-                              <div className="text-green-600">
-                                <div className="font-semibold">${position.pnl.toFixed(2)}</div>
-                                <div className="text-xs">+{position.pnlPercent.toFixed(2)}%</div>
+                              <div className={position.pnl >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                <div className="font-semibold">{position.pnl < 0 ? '-' : ''}${Math.abs(position.pnl).toFixed(2)}</div>
+                                <div className="text-xs">{position.pnlPercent >= 0 ? '+' : '-'}{Math.abs(position.pnlPercent).toFixed(2)}%</div>
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <button className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+                              <button 
+                                onClick={() => {
+                                  // Add the position's P&L to closed P&L
+                                  setClosedPnL(closedPnL + position.pnl);
+                                  // Remove position from configs
+                                  setPositionConfigs(positionConfigs.filter(config => config.id !== position.id));
+                                }}
+                                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                              >
                                 Close
                               </button>
                             </td>
@@ -337,9 +375,13 @@ export default function TradePage() {
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </section>
-            )}
+                ) : (
+                  <div className="p-6 text-center">
+                    <p className="text-secondary">No active positions. Start trading to create positions.</p>
+                  </div>
+                )}
+              </div>
+            </section>
 
             {/* Available Trading Pools */}
             <section>
@@ -369,7 +411,6 @@ export default function TradePage() {
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Type</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Price</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Change</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Volume</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Liquidity</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Fee</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
@@ -400,7 +441,6 @@ export default function TradePage() {
                               <span>{pool.change24h >= 0 ? '+' : ''}{pool.change24h}%</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-primary">{pool.volume24h}</td>
                           <td className="px-6 py-4">
                             <div>
                               <div className="font-semibold text-primary">{pool.liquidity}</div>
@@ -493,9 +533,33 @@ export default function TradePage() {
               <div className="grid grid-cols-2 gap-3 pt-4">
                 <button
                   onClick={() => {
-                    alert(`Buy order placed for ${tradeAmount} ${selectedPool.symbol}`);
-                    setSelectedPool(null);
-                    setTradeAmount('');
+                    const amount = parseFloat(tradeAmount);
+                    if (amount > 0 && selectedPool) {
+                      const mineralKey = (['oil', 'gold', 'silver'] as const).find(
+                        key => typedMockMinerals[key] && 
+                        getCurrentPrice(typedMockMinerals[key].priceHistory).toFixed(2) === selectedPool.price.toFixed(2)
+                      );
+
+                      if (mineralKey) {
+                        const currentPrice = getCurrentPrice(typedMockMinerals[mineralKey].priceHistory);
+                        
+                        // Create new position with unique ID
+                        const newId = (Math.max(...positionConfigs.map(p => parseInt(p.id)), 0) + 1).toString();
+                        setPositionConfigs([
+                          ...positionConfigs,
+                          {
+                            id: newId,
+                            symbol: selectedPool.symbol,
+                            amount,
+                            entryPrice: currentPrice,
+                            mineralKey
+                          }
+                        ]);
+
+                        setSelectedPool(null);
+                        setTradeAmount('');
+                      }
+                    }
                   }}
                   disabled={!tradeAmount || !walletConnected}
                   className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -504,14 +568,12 @@ export default function TradePage() {
                 </button>
                 <button
                   onClick={() => {
-                    alert(`Sell order placed for ${tradeAmount} ${selectedPool.symbol}`);
                     setSelectedPool(null);
                     setTradeAmount('');
                   }}
-                  disabled={!tradeAmount || !walletConnected}
-                  className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  className="px-4 py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors font-semibold"
                 >
-                  Sell
+                  Cancel
                 </button>
               </div>
 

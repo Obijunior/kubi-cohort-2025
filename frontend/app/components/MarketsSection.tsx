@@ -1,16 +1,81 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { mockMinerals } from '@/app/utils/mockData';
+import { getTokensForMineral } from '@/app/utils/poolConfig';
+
+type Market = {
+  mineral: string;
+  symbol: string;
+  price: string;
+  change: string;
+  volume: string;
+  trend: 'up' | 'down';
+};
 
 export default function MarketsSection() {
   const router = useRouter();
-  const markets = [
-    { mineral: 'Oil', symbol: 'WTI', price: '$76.45', change: '+2.4%', volume: '$125.5M', trend: 'up' },
-    { mineral: 'Gold', symbol: 'XAU', price: '$2,089.30', change: '+1.8%', volume: '$83.3M', trend: 'up' },
-    { mineral: 'Silver', symbol: 'XAG', price: '$31.20', change: '+3.1%', volume: '$52.2M', trend: 'up' },
-  ];
+  const [markets, setMarkets] = useState<Market[]>([]);
+
+  useEffect(() => {
+    const loadMarkets = () => {
+      const marketData: Market[] = [];
+
+      // Oil
+      if (mockMinerals.oil && mockMinerals.oil.priceHistory.length > 0) {
+        const oilPrice = mockMinerals.oil.priceHistory[mockMinerals.oil.priceHistory.length - 1].price;
+        const oilPrevPrice = mockMinerals.oil.priceHistory[mockMinerals.oil.priceHistory.length - 2]?.price || oilPrice;
+        const oilChange = ((oilPrice - oilPrevPrice) / oilPrevPrice) * 100;
+        const oilTokens = getTokensForMineral('Oil');
+        marketData.push({
+          mineral: 'Oil',
+          symbol: 'WTI',
+          price: `$${oilPrice.toFixed(2)}`,
+          change: `${oilChange >= 0 ? '+' : ''}${oilChange.toFixed(1)}%`,
+          volume: `${oilTokens.toLocaleString()}`,
+          trend: oilChange >= 0 ? 'up' : 'down'
+        });
+      }
+
+      // Gold
+      if (mockMinerals.gold && mockMinerals.gold.priceHistory.length > 0) {
+        const goldPrice = mockMinerals.gold.priceHistory[mockMinerals.gold.priceHistory.length - 1].price;
+        const goldPrevPrice = mockMinerals.gold.priceHistory[mockMinerals.gold.priceHistory.length - 2]?.price || goldPrice;
+        const goldChange = ((goldPrice - goldPrevPrice) / goldPrevPrice) * 100;
+        const goldTokens = getTokensForMineral('Gold');
+        marketData.push({
+          mineral: 'Gold',
+          symbol: 'XAU',
+          price: `$${goldPrice.toFixed(2)}`,
+          change: `${goldChange >= 0 ? '+' : ''}${goldChange.toFixed(1)}%`,
+          volume: `${goldTokens.toLocaleString()}`,
+          trend: goldChange >= 0 ? 'up' : 'down'
+        });
+      }
+
+      // Silver
+      if (mockMinerals.silver && mockMinerals.silver.priceHistory.length > 0) {
+        const silverPrice = mockMinerals.silver.priceHistory[mockMinerals.silver.priceHistory.length - 1].price;
+        const silverPrevPrice = mockMinerals.silver.priceHistory[mockMinerals.silver.priceHistory.length - 2]?.price || silverPrice;
+        const silverChange = ((silverPrice - silverPrevPrice) / silverPrevPrice) * 100;
+        const silverTokens = getTokensForMineral('Silver');
+        marketData.push({
+          mineral: 'Silver',
+          symbol: 'XAG',
+          price: `$${silverPrice.toFixed(2)}`,
+          change: `${silverChange >= 0 ? '+' : ''}${silverChange.toFixed(1)}%`,
+          volume: `${silverTokens.toLocaleString()}`,
+          trend: silverChange >= 0 ? 'up' : 'down'
+        });
+      }
+
+      setMarkets(marketData);
+    };
+
+    loadMarkets();
+  }, []);
 
   return (
     <section id="markets" className="px-6 py-20 bg-secondary">
@@ -52,11 +117,11 @@ export default function MarketsSection() {
 
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-secondary">Token Price</span>
+                  <span className="text-sm text-secondary">Price</span>
                   <span className="text-xl font-bold text-primary">{market.price}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-secondary">24h Volume</span>
+                  <span className="text-sm text-secondary">Token Volume</span>
                   <span className="text-sm font-medium text-secondary">{market.volume}</span>
                 </div>
               </div>

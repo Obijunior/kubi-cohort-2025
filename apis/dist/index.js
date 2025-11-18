@@ -24,7 +24,7 @@ app.use((req, res, next) => {
     next();
 });
 // Routes
-app.use('/minerals', minerals_1.default);
+app.use('/api/minerals', minerals_1.default);
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
@@ -43,19 +43,30 @@ app.use((req, res) => {
 });
 // Error handler
 app.use((err, req, res, next) => {
-    console.error('❌ Error:', err);
+    console.error('[ ERROR ] :: ', err);
     res.status(500).json({
         error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
 });
-app.listen(PORT, () => {
+// Process error handlers
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection:', reason);
+});
+process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught Exception:', error);
+    process.exit(1);
+});
+const server = app.listen(PORT, () => {
     console.log('\n========================================');
-    console.log('🚀 Mineral Trading Backend Started');
+    console.log('Mineral Trading Backend Started');
     console.log('========================================');
-    console.log(`📍 Server: http://localhost:${PORT}`);
-    console.log(`📊 Minerals API: http://localhost:${PORT}/minerals`);
-    console.log(`💚 Health Check: http://localhost:${PORT}/health`);
-    console.log(`🔗 CORS Origin: ${CORS_ORIGIN}`);
+    console.log(`Server: http://localhost:${PORT}`);
+    console.log(`Minerals API: http://localhost:${PORT}/api/minerals`);
+    console.log(`Health Check: http://localhost:${PORT}/health`);
+    console.log(`CORS Origin: ${CORS_ORIGIN}`);
     console.log('========================================\n');
+});
+server.on('error', (error) => {
+    console.error('[ ERROR ] :: ', error);
 });
