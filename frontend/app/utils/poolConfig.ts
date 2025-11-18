@@ -1,32 +1,44 @@
-export const POOL_CONFIGS = [
+import { mockMinerals, getCurrentPrice } from './mockData';
+
+const BASE_POOL_CONFIGS = [
   {
     key: 'oil' as const,
     symbol: 'WTI',
     name: 'Oil',
     type: 'Energy',
-    liquidity: '$2.5M',
     tradingFee: '0.3%',
-    tokensInPool: 1000000
+    tokensInPool: 100000
   },
   {
     key: 'gold' as const,
     symbol: 'XAU',
     name: 'Gold',
     type: 'Precious Metal',
-    liquidity: '$1.8M',
-    tradingFee: '0.25%',
-    tokensInPool: 500000
+    tradingFee: '0.2%',
+    tokensInPool: 10000
   },
   {
     key: 'silver' as const,
     symbol: 'XAG',
     name: 'Silver',
     type: 'Precious Metal',
-    liquidity: '$1.2M',
-    tradingFee: '0.35%',
-    tokensInPool: 2000000
+    tradingFee: '0.1%',
+    tokensInPool: 20000
   }
 ];
+
+export const POOL_CONFIGS = BASE_POOL_CONFIGS.map(config => {
+  const mineralData = mockMinerals[config.key];
+  const currentPrice = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
+  const liquidityValue = (currentPrice * config.tokensInPool) / 1000000;
+  const liquidity = `$${liquidityValue.toFixed(2)} M`;
+
+  return {
+    ...config,
+    liquidity,
+  };
+});
+
 
 export const getTokensForMineral = (mineralName: string): number => {
   const config = POOL_CONFIGS.find(p => p.name.toLowerCase() === mineralName.toLowerCase());
