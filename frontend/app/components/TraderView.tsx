@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownRight, Search } from 'lucide-react';
 import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
 import { POOL_CONFIGS } from '@/app/utils/poolConfig';
-import type { PositionConfig } from '@/app/trade/page';
+import type { PositionConfig, CompanyAsset } from '@/app/trade/page';
+import { convertUSDtoXRP } from '../../../apis/src/services/xrpPriceService';
 
 type MockMineralEntry = {
   priceHistory: { date: string; price: number; }[];
@@ -38,29 +39,7 @@ type TraderViewProps = {
   setPositionConfigs: React.Dispatch<React.SetStateAction<PositionConfig[]>>;
   closedPnL: number;
   setClosedPnL: React.Dispatch<React.SetStateAction<number>>;
-};
-
-const initializeMineralPools = (): MineralPool[] => {
-  const pools: MineralPool[] = [];
-
-  POOL_CONFIGS.forEach(config => {
-    const mineralData = typedMockMinerals[config.key];
-    if (mineralData && mineralData.priceHistory.length > 0) {
-      pools.push({
-        id: config.key,
-        symbol: config.symbol,
-        name: config.name,
-        type: config.type,
-        price: getCurrentPrice(mineralData.priceHistory),
-        change24h: calculatePriceChange(mineralData.priceHistory),
-        liquidity: config.liquidity,
-        tradingFee: config.tradingFee,
-        tokensInPool: config.tokensInPool
-      });
-    }
-  });
-
-  return pools;
+  companyAssets: CompanyAsset[];
 };
 
 export default function TraderView({ 
@@ -68,12 +47,32 @@ export default function TraderView({
   positionConfigs, 
   setPositionConfigs, 
   closedPnL, 
-  setClosedPnL 
+  setClosedPnL,
+  companyAssets
 }: TraderViewProps) {
+  const mineralPools: MineralPool[] = companyAssets.map(asset => {
+    const mineralData = typedMockMinerals[asset.key];
+    const change24h = mineralData ? calculatePriceChange(mineralData.priceHistory) : 0;
+    const liquidity = asset.tokensInPool * asset.price;
+
+    return {
+      id: asset.key,
+      symbol: asset.symbol,
+      name: asset.name,
+      type: 'Commodity', // Assuming all are commodities
+      price: asset.price,
+      change24h: change24h,
+      liquidity: `$${(liquidity / 1_000_000).toFixed(1)}M`,
+      tradingFee: `${asset.feePercentage}%`,
+      tokensInPool: asset.tokensInPool,
+    };
+  });
+
   const [selectedPool, setSelectedPool] = useState<MineralPool | null>(null);
   const [tradeAmount, setTradeAmount] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [mineralPools] = useState<MineralPool[]>(initializeMineralPools());
+  // NEW STATE: Stores the result of the async conversion
+  const [estimatedXRP, setEstimatedXRP] = useState<string>(''); 
 
   const userPositions: UserPosition[] = (() => {
     return positionConfigs.map(config => {
@@ -103,6 +102,29 @@ export default function TraderView({
     pool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     pool.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
+  // Handles the asynchronous price calculation
+  useEffect(() => {
+    const tradeValue = parseFloat(tradeAmount);
+
+    if (selectedPool && tradeValue > 0) {
+      const calculateXRP = async () => {
+        const estimatedUSD = tradeValue * selectedPool.price;
+        try {
+          // Await the promise to get the number
+          const xrpAmount = await convertUSDtoXRP(estimatedUSD); 
+          // Format the number and store the result as a string
+          setEstimatedXRP(xrpAmount.toFixed(8));
+        } catch (error) {
+          console.error("Error converting USD to XRP:", error);
+          setEstimatedXRP('N/A'); 
+        }
+      };
+      calculateXRP();
+    } else {
+      setEstimatedXRP(''); 
+    }
+  }, [tradeAmount, selectedPool]); // Dependencies
 
   return (
     <div className="space-y-8">
@@ -144,7 +166,7 @@ export default function TraderView({
                     <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Entry Price</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Current Price</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">P&L</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>
+                    {/* <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Actions</th>s */}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-200">
@@ -160,7 +182,7 @@ export default function TraderView({
                           <div className="text-xs">{position.pnlPercent >= 0 ? '+' : '-'}{Math.abs(position.pnlPercent).toFixed(2)}%</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      {/* <td className="px-6 py-4">
                         <button 
                           onClick={() => {
                             setClosedPnL(closedPnL + position.pnl);
@@ -170,7 +192,7 @@ export default function TraderView({
                         >
                           Close
                         </button>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                 </tbody>
@@ -190,7 +212,7 @@ export default function TraderView({
           <div className="p-6 border-b border-stone-100 flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold text-primary mb-1">Available Markets</h2>
-              <p className="text-sm text-secondary">Trade tokenized mineral commodities</p>
+              <p className="text-sm text-secondary">Buy tokenized mineral commodities</p>
             </div>
             <div className="relative w-64">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" />
@@ -253,9 +275,9 @@ export default function TraderView({
                       <button
                         onClick={() => setSelectedPool(pool)}
                         disabled={!walletConnected}
-                        className="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-opacity-90 transition-all font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        className="backdrop-blur-sm px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-opacity-90 transition-all font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
                       >
-                        Trade
+                        Buy
                       </button>
                     </td>
                   </tr>
@@ -264,6 +286,31 @@ export default function TraderView({
             </table>
           </div>
         </div>
+      </section>
+
+      {/* Trade Options */}
+      <section>
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+
+            {/* Title/head bar */}
+          <div className="p-6 border-b border-stone-100 flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-primary mb-1">Trade</h2>
+              <p className="text-sm text-secondary">Trade tokenized mineral commodities</p>
+            </div>
+            <div className="relative w-64">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name or symbol..."
+                className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-accent focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          </div>
       </section>
 
       {/* Risk Disclaimer */}
@@ -324,7 +371,7 @@ export default function TraderView({
                   className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent text-sm"
                 />
                 <p className="text-xs text-secondary mt-2">
-                  Estimated cost: ${(parseFloat(tradeAmount || '0') * selectedPool.price).toFixed(2)}
+                  Estimated cost: ${(parseFloat(tradeAmount || '0') * selectedPool.price).toFixed(2)} / {estimatedXRP || '...'} XRP
                 </p>
               </div>
 
@@ -355,10 +402,11 @@ export default function TraderView({
 
                         setSelectedPool(null);
                         setTradeAmount('');
+                        setEstimatedXRP(''); // Reset XRP estimate on successful trade
                       }
                     }
                   }}
-                  disabled={!tradeAmount || !walletConnected}
+                  disabled={!tradeAmount || !walletConnected || estimatedXRP === 'N/A' || estimatedXRP === ''}
                   className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                   Buy
@@ -367,6 +415,7 @@ export default function TraderView({
                   onClick={() => {
                     setSelectedPool(null);
                     setTradeAmount('');
+                    setEstimatedXRP(''); // Reset XRP estimate on cancel
                   }}
                   className="px-4 py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors font-semibold"
                 >

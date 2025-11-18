@@ -22,6 +22,7 @@ export default function CompanyView({ companyAssets, setCompanyAssets }: Company
     const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
 
     const newAsset: CompanyAsset = {
+      key: newAssetData.assetType,
       symbol: newAssetData.assetSymbol,
       name: newAssetData.assetName,
       tokensInPool: parseInt(newAssetData.tokensToMint, 10),

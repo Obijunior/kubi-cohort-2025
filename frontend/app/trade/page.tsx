@@ -16,6 +16,7 @@ type MockMineralEntry = {
 const typedMockMinerals: Record<string, MockMineralEntry> = mockMinerals;
 
 export type CompanyAsset = {
+  key: string;
   symbol: string;
   name: string;
   tokensInPool: number;
@@ -41,6 +42,7 @@ export default function TradePage() {
       const mineralData = typedMockMinerals[config.key];
       const price = mineralData ? getCurrentPrice(mineralData.priceHistory) : 0;
       return {
+        key: config.key,
         symbol: config.symbol,
         name: config.name,
         tokensInPool: config.tokensInPool,
@@ -127,6 +129,7 @@ export default function TradePage() {
             setPositionConfigs={setPositionConfigs}
             closedPnL={closedPnL}
             setClosedPnL={setClosedPnL}
+            companyAssets={companyAssets}
           />
         )}
       </main>
