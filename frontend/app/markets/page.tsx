@@ -60,7 +60,7 @@ export default function MarketsPage() {
             ...defaultMineral,
             currentPrice: `$${currentPrice.toFixed(2)}`,
             change: change,
-            trend: change >= 0 ? 'up' : 'down'
+            trend: (change >= 0 ? 'up' : 'down') as 'up' | 'down'
           };
         }
         return defaultMineral;
