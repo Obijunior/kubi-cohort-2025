@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownRight, Search } from 'lucide-react';
 import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
-import { POOL_CONFIGS } from '@/app/utils/poolConfig';
+// import { POOL_CONFIGS } from '@/app/utils/poolConfig';
 import type { PositionConfig, CompanyAsset } from '@/app/trade/page';
 import { convertUSDtoXRP } from '../../../apis/src/services/xrpPriceService';
 
@@ -48,7 +48,7 @@ export default function TraderView({
   positionConfigs, 
   setPositionConfigs, 
   closedPnL, 
-  setClosedPnL,
+  // setClosedPnL,
   companyAssets
 }: TraderViewProps) {
   const mineralPools: MineralPool[] = companyAssets.map(asset => {
@@ -126,7 +126,7 @@ export default function TraderView({
           // Await the promise to get the number
           const xrpAmount = await convertUSDtoXRP(estimatedUSD); 
           // Format the number and store the result as a string
-          setEstimatedXRP(xrpAmount.toFixed(8));
+          setEstimatedXRP(xrpAmount.toFixed(6));
         } catch (error) {
           console.error("Error converting USD to XRP:", error);
           setEstimatedXRP('N/A'); 
@@ -394,7 +394,7 @@ export default function TraderView({
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-secondary">Pool Liquidity</span>
-                <span className="font-semibold text-primary">{selectedPool.liquidity}</span>
+                <span className="font-semibold text-primary">{selectedPool.tokensInPool} tokens</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-secondary">Trading Fee</span>
@@ -413,7 +413,7 @@ export default function TraderView({
                   className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent text-sm"
                 />
                 <p className="text-xs text-secondary mt-2">
-                  Estimated cost: ${(parseFloat(tradeAmount || '0') * selectedPool.price).toFixed(2)} / {estimatedXRP || '...'} XRP
+                  Estimated cost: ${(parseFloat(tradeAmount || '0') * selectedPool.price).toFixed(2)} / {estimatedXRP || '... '} XRP
                 </p>
               </div>
 
