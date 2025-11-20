@@ -2,6 +2,7 @@
 
 import { Plus, X } from 'lucide-react';
 import { useState } from 'react';
+import { issueFungibleToken } from '../../../apis/src/services/xrplNew'
 
 type AssetType = 'oil' | 'gold' | 'silver' | 'platinum' | 'copper' | 'natural-gas';
 

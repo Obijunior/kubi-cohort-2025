@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import { X, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import * as xrplService from '../../../apis/src/services/xrplNew';
+import type { Wallet } from 'xrpl';
 
 interface XRPLWalletModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConnect: (address: string) => void;
+  onConnect: (address: string) => void; // pass address
 }
 
 export default function XRPLWalletModal({ isOpen, onClose, onConnect }: XRPLWalletModalProps) {
@@ -17,30 +19,25 @@ export default function XRPLWalletModal({ isOpen, onClose, onConnect }: XRPLWall
   const [success, setSuccess] = useState(false);
 
   const handleConnect = async () => {
+    setError(null);
+    setLoading(true);
+
+    // Validate seed
+    if (!seed.trim()) {
+      setError('Please enter your XRPL seed phrase');
+      setLoading(false);
+      return;
+    }
+
+    if (!/^s[A-Za-z0-9]{25,}$/.test(seed)) {
+      setError('Invalid seed format. XRPL seeds start with "s" followed by alphanumeric characters.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      setError(null);
-      setLoading(true);
-
-      // Validate seed format (basic validation for XRPL seed)
-      if (!seed.trim()) {
-        setError('Please enter your XRPL seed phrase');
-        setLoading(false);
-        return;
-      }
-
-      // XRPL seeds typically start with 's' and are alphanumeric
-      if (!seed.match(/^s[A-Za-z0-9]{25,}$/)) {
-        setError('Invalid seed format. XRPL seeds start with "s" followed by alphanumeric characters.');
-        setLoading(false);
-        return;
-      }
-
-      // Import xrpl library dynamically
-      const xrpl = await import('xrpl');
-      const Wallet = xrpl.Wallet;
-
-      // Derive account from seed
-      const wallet = Wallet.fromSeed(seed);
+      // Use xrplNew service function to derive wallet
+      const wallet: Wallet = xrplService.loginWithSeed(seed);
       const address = wallet.address;
 
       if (!address) {
@@ -50,24 +47,17 @@ export default function XRPLWalletModal({ isOpen, onClose, onConnect }: XRPLWall
       }
 
       setSuccess(true);
-      
-      // Reset form and close after a brief delay to show success state
+
+      // Notify parent with wallet + address
       setTimeout(() => {
-        onConnect(address);
+        onConnect(wallet.address);
         handleClose();
       }, 1000);
 
     } catch (err: unknown) {
       console.error('XRPL wallet connection error:', err);
-      
       if (err instanceof Error) {
-        if (err.message.includes('checksum')) {
-          setError('Invalid seed: Checksum validation failed');
-        } else if (err.message.includes('Invalid seed')) {
-          setError('Invalid seed phrase format');
-        } else {
-          setError(err.message || 'Failed to connect wallet');
-        }
+        setError(err.message.includes('Invalid XRPL seed') ? 'Invalid seed phrase' : err.message);
       } else {
         setError('An unexpected error occurred');
       }
@@ -85,9 +75,7 @@ export default function XRPLWalletModal({ isOpen, onClose, onConnect }: XRPLWall
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && seed.trim()) {
-      handleConnect();
-    }
+    if (e.key === 'Enter' && seed.trim()) handleConnect();
   };
 
   if (!isOpen) return null;
@@ -101,29 +89,20 @@ export default function XRPLWalletModal({ isOpen, onClose, onConnect }: XRPLWall
             <h2 className="text-2xl font-bold text-primary">Connect XRPL Wallet</h2>
             <p className="text-sm text-secondary mt-1">Enter your seed phrase to connect</p>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-1 hover:bg-stone-100 rounded-lg transition"
-            aria-label="Close modal"
-          >
+          <button onClick={handleClose} className="p-1 hover:bg-stone-100 rounded-lg transition" aria-label="Close modal">
             <X className="w-5 h-5 text-secondary" />
           </button>
         </div>
 
         {/* Seed Input */}
         <div className="mb-6">
-          <label htmlFor="seed-input" className="block text-sm font-medium text-primary mb-2">
-            XRPL Seed Phrase
-          </label>
+          <label htmlFor="seed-input" className="block text-sm font-medium text-primary mb-2">XRPL Seed Phrase</label>
           <div className="relative">
             <input
               id="seed-input"
               type={showSeed ? 'text' : 'password'}
               value={seed}
-              onChange={(e) => {
-                setSeed(e.target.value);
-                if (error) setError(null); // Clear error when user starts typing
-              }}
+              onChange={(e) => { setSeed(e.target.value); if (error) setError(null); }}
               onKeyPress={handleKeyPress}
               placeholder="Enter your seed phrase (e.g., sEd7rBGm5kxzauRTAV2hbsa...)"
               disabled={loading || success}
@@ -135,25 +114,17 @@ export default function XRPLWalletModal({ isOpen, onClose, onConnect }: XRPLWall
               type="button"
               disabled={loading || success}
             >
-              {showSeed ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
+              {showSeed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          <p className="text-xs text-stone-500 mt-2">
-            ⚠️ Never share your seed phrase. We do not store it.
-          </p>
+          <p className="text-xs text-stone-500 mt-2">⚠️ Never share your seed phrase. We do not store it.</p>
         </div>
 
         {/* Error Message */}
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex gap-3">
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-red-900">{error}</p>
-            </div>
+            <div><p className="text-sm font-medium text-red-900">{error}</p></div>
           </div>
         )}
 
@@ -161,9 +132,7 @@ export default function XRPLWalletModal({ isOpen, onClose, onConnect }: XRPLWall
         {success && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex gap-3">
             <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-green-900">Wallet connected successfully!</p>
-            </div>
+            <div><p className="text-sm font-medium text-green-900">Wallet connected successfully!</p></div>
           </div>
         )}
 
@@ -191,19 +160,7 @@ export default function XRPLWalletModal({ isOpen, onClose, onConnect }: XRPLWall
             disabled={loading || !seed.trim() || success}
             className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? (
-              <>
-                <span className="animate-spin">⏳</span>
-                Connecting...
-              </>
-            ) : success ? (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                Connected!
-              </>
-            ) : (
-              'Connect Wallet'
-            )}
+            {loading ? <>⏳ Connecting...</> : success ? <>✔ Connected!</> : 'Connect Wallet'}
           </button>
         </div>
       </div>
