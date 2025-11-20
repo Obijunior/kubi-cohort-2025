@@ -116,26 +116,37 @@ export default function TraderView({
 
 
   // Handles the asynchronous price calculation
+  // Handles the asynchronous price calculation
   useEffect(() => {
-    const tradeValue = parseFloat(tradeAmount);
+    const tradeValue = parseFloat(tradeAmount || '0');
+    let cancelled = false;
+    let timeoutId: number | undefined;
 
     if (selectedPool && tradeValue > 0) {
       const calculateXRP = async () => {
         const estimatedUSD = tradeValue * selectedPool.price;
         try {
-          // Await the promise to get the number
-          const xrpAmount = await convertUSDtoXRP(estimatedUSD); 
-          // Format the number and store the result as a string
-          setEstimatedXRP(xrpAmount.toFixed(6));
+          const xrpAmount = await convertUSDtoXRP(estimatedUSD);
+          const formatted = xrpAmount.toFixed(6);
+          if (!cancelled) setEstimatedXRP(prev => (prev !== formatted ? formatted : prev));
         } catch (error) {
           console.error("Error converting USD to XRP:", error);
-          setEstimatedXRP('N/A'); 
+          if (!cancelled) setEstimatedXRP(prev => (prev !== 'N/A' ? 'N/A' : prev));
         }
       };
+
       calculateXRP();
     } else {
-      setEstimatedXRP(''); 
+      // schedule the clear to avoid calling setState synchronously inside the effect
+      timeoutId = window.setTimeout(() => {
+        setEstimatedXRP(prev => (prev !== '' ? '' : prev));
+      }, 0);
     }
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
   }, [tradeAmount, selectedPool]); // Dependencies
 
   return (
