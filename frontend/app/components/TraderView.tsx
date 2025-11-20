@@ -16,7 +16,6 @@ type MineralPool = {
   key: string;
   symbol: string;
   name: string;
-  type: string;
   price: number;
   change24h: number;
   liquidity: string;
@@ -113,9 +112,6 @@ export default function TraderView({
     currentPage * itemsPerPage
   );
   
-
-
-  // Handles the asynchronous price calculation
   // Handles the asynchronous price calculation
   useEffect(() => {
     const tradeValue = parseFloat(tradeAmount || '0');
@@ -257,7 +253,6 @@ export default function TraderView({
               <thead className="bg-stone-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Asset</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Type</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Price</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">24h Change</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-secondary">Liquidity</th>
@@ -271,11 +266,6 @@ export default function TraderView({
                     <td className="px-6 py-4">
                       <div className="font-semibold text-primary">{pool.symbol}</div>
                       <div className="text-sm text-secondary">{pool.name}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium">
-                        {pool.type}
-                      </span>
                     </td>
                     <td className="px-6 py-4 font-semibold text-primary">${pool.price.toFixed(2)}</td>
                     <td className="px-6 py-4">
