@@ -14,9 +14,9 @@ export default function Footer() {
               </div>
               <span className="text-xl font-bold">TerraNova</span>
             </div>
-            <p className="text-sm text-white/60">
-              Learn, trade, and grow your real estate portfolio through tokenized futures.
-            </p>
+            {/* <p className="text-sm text-white/60">
+              Learn, trade, and grow your mineral portfolio through tokenized futures.
+            </p> */}
           </div>
         </div>
         
