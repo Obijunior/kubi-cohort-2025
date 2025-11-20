@@ -288,7 +288,7 @@ async function runQuickTest() {
 // FULL TEST (All operations)
 // ---------------------------------------------
 async function runFullTest() {
-  logInfo('🚀 Starting Full XRPL Test Suite...\n');
+  logInfo('Starting Full XRPL Test Suite...\n');
   
   let issuerAccount: any;
   let holderAccount: any;
@@ -352,7 +352,7 @@ async function runFullTest() {
     await testGetBalances(holderAccount.address);
     await testGetBalances(buyerAccount.address);
     
-    logSuccess('\n✅ All tests completed successfully!');
+    logSuccess('\nAll tests completed successfully!');
     
     // Summary
     logInfo('\n=== Test Summary ===');

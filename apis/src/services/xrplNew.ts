@@ -61,7 +61,7 @@ export function loginWithSeed(seed: string) {
 // ---------------------------------------------
 export async function createTrustline(
   holderWallet: Wallet,
-  issuerAddress: string,
+  issuerAddress: "rwQwc24TfDSjvNy3t9EWDAmoDaSnr6mENV", // string
   currency: string,
   limit = "1000000000"
 ) {
@@ -159,4 +159,22 @@ export async function createSellOffer(
 
   const prepared = await c.autofill(tx);
   return await submitAndWait(prepared, sellerWallet);
+}
+
+// get account balance
+// ---------------------------------------------
+// Get wallet XRP balance
+// ---------------------------------------------
+export async function getXRPBalance(walletAddress: string): Promise<string> {
+  const client = await getClient(); // reuse your existing client connection
+  const accountInfo = await client.request({
+    command: "account_info",
+    account: walletAddress,
+    ledger_index: "validated"
+  });
+  
+  // Balance comes in drops (1 XRP = 1,000,000 drops)
+  const balanceInDrops = accountInfo.result.account_data.Balance;
+  const balanceInXRP = (parseInt(balanceInDrops) / 1_000_000).toString();
+  return balanceInXRP;
 }
