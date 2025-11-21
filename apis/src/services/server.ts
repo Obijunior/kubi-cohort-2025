@@ -1,10 +1,19 @@
 // server.ts
 import express from "express";
 import bodyParser from "body-parser";
+import cors from "cors";
+import dotenv from "dotenv";
 import xrpl, { Wallet, xrpToDrops } from "xrpl";
+import { convertUSDtoXRP } from "./xrpPriceService";
 
+dotenv.config();
 const app = express();
 app.use(bodyParser.json());
+
+// Allow requests from the frontend dev server by default
+app.use(
+  cors({ origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000" })
+);
 
 // XRPL Websocket endpoint (testnet)
 const XRPL_WS = "wss://s.altnet.rippletest.net:51233";
@@ -53,6 +62,41 @@ app.get("/create-account", async (req, res) => {
   }
 });
 
+// Health endpoint
+app.get("/api/health", (_req, res) => res.json({ ok: true }));
+
+// ---------------------------------------------
+// GET ACCOUNT INFO
+// ---------------------------------------------
+app.get("/api/xrpl/account/:address", async (req, res) => {
+  try {
+    const { address } = req.params;
+    const c = await getClient();
+    const info = await c.request({
+      command: "account_info",
+      account: address,
+      ledger_index: "validated",
+    });
+    res.json(info.result ?? info);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------
+// CONVERT USD -> XRP (helper endpoint)
+// ---------------------------------------------
+app.get("/api/xrpl/convert-usd", async (req, res) => {
+  try {
+    const usd = Number(req.query.usd ?? 0);
+    if (isNaN(usd)) return res.status(400).json({ error: "Invalid usd param" });
+    const xrp = await convertUSDtoXRP(usd);
+    res.json({ xrp });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ---------------------------------------------
 // LOGIN WITH SEED
 // ---------------------------------------------
@@ -74,7 +118,7 @@ app.post("/trustline", async (req, res) => {
     const wallet = login(seed);
     const c = await getClient();
 
-    const tx = {
+    const tx: any = {
       TransactionType: "TrustSet",
       Account: wallet.classicAddress,
       LimitAmount: {
@@ -84,7 +128,7 @@ app.post("/trustline", async (req, res) => {
       },
     };
 
-    const prepared = await c.autofill(tx);
+    const prepared = await c.autofill(tx as any);
     const result = await submitAndWait(prepared, wallet);
     res.json(result);
   } catch (err: any) {
@@ -102,7 +146,7 @@ app.post("/mint", async (req, res) => {
     const wallet = login(seed);
     const c = await getClient();
 
-    const tx = {
+    const tx: any = {
       TransactionType: "Payment",
       Account: wallet.classicAddress,
       Destination: recipient,
@@ -113,7 +157,7 @@ app.post("/mint", async (req, res) => {
       },
     };
 
-    const prepared = await c.autofill(tx);
+    const prepared = await c.autofill(tx as any);
     const result = await submitAndWait(prepared, wallet);
     res.json(result);
   } catch (err: any) {
@@ -131,7 +175,7 @@ app.post("/buy-offer", async (req, res) => {
     const wallet = login(seed);
     const c = await getClient();
 
-    const tx = {
+    const tx: any = {
       TransactionType: "OfferCreate",
       Account: wallet.classicAddress,
       TakerPays: xrpToDrops(xrpAmount),
@@ -142,7 +186,7 @@ app.post("/buy-offer", async (req, res) => {
       },
     };
 
-    const prepared = await c.autofill(tx);
+    const prepared = await c.autofill(tx as any);
     const result = await submitAndWait(prepared, wallet);
     res.json(result);
   } catch (err: any) {
@@ -160,7 +204,7 @@ app.post("/sell-offer", async (req, res) => {
     const wallet = login(seed);
     const c = await getClient();
 
-    const tx = {
+    const tx: any = {
       TransactionType: "OfferCreate",
       Account: wallet.classicAddress,
       TakerPays: {
@@ -171,7 +215,7 @@ app.post("/sell-offer", async (req, res) => {
       TakerGets: xrpToDrops(xrpAmount),
     };
 
-    const prepared = await c.autofill(tx);
+    const prepared = await c.autofill(tx as any);
     const result = await submitAndWait(prepared, wallet);
     res.json(result);
   } catch (err: any) {
@@ -182,4 +226,5 @@ app.post("/sell-offer", async (req, res) => {
 // ---------------------------------------------
 // START SERVER
 // ---------------------------------------------
-app.listen(4000, () => console.log("XRPL API running on port 4000"));
+const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
+app.listen(PORT, () => console.log(`XRPL API running on port ${PORT}`));

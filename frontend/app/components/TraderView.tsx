@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useWallet } from '@/app/context/WalletContext';
 import { ArrowUpRight, ArrowDownRight, Search } from 'lucide-react';
 import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
 // import { POOL_CONFIGS } from '@/app/utils/poolConfig';
 import type { PositionConfig, CompanyAsset } from '@/app/trade/page';
-import { convertUSDtoXRP } from '../../../apis/src/services/xrpPriceService';
+import { apiGet } from '@/app/utils/api';
 
 type MockMineralEntry = {
   priceHistory: { date: string; price: number; }[];
@@ -75,6 +76,8 @@ export default function TraderView({
   const [currentPage, setCurrentPage] = useState(1);
   // NEW STATE: Stores the result of the async conversion
   const [estimatedXRP, setEstimatedXRP] = useState<string>(''); 
+  const [buyError, setBuyError] = useState<string | null>(null);
+  const { xrpBalance, setXrpBalance, refreshBalance } = useWallet();
 
   const userPositions: UserPosition[] = (() => {
     return positionConfigs.map(config => {
@@ -122,8 +125,10 @@ export default function TraderView({
       const calculateXRP = async () => {
         const estimatedUSD = tradeValue * selectedPool.price;
         try {
-          const xrpAmount = await convertUSDtoXRP(estimatedUSD);
-          const formatted = xrpAmount.toFixed(6);
+          const data = await apiGet(`/api/xrpl/convert-usd?usd=${encodeURIComponent(estimatedUSD)}`);
+          const xrpAmount = data?.xrp ?? null;
+          if (xrpAmount === null) throw new Error('No xrp returned');
+          const formatted = Number(xrpAmount).toFixed(6);
           if (!cancelled) setEstimatedXRP(prev => (prev !== formatted ? formatted : prev));
         } catch (error) {
           console.error("Error converting USD to XRP:", error);
@@ -420,27 +425,57 @@ export default function TraderView({
 
               <div className="grid grid-cols-2 gap-3 pt-4">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    setBuyError(null);
                     const mineralKey = selectedPool.key;
-                      if (mineralKey && ['oil', 'gold', 'silver'].includes(mineralKey)) {
-                        const currentPrice = getCurrentPrice(typedMockMinerals[mineralKey as 'oil' | 'gold' | 'silver'].priceHistory);
-                        
-                        const newId = (Math.max(...positionConfigs.map(p => parseInt(p.id)), 0) + 1).toString();
-                        setPositionConfigs([
-                          ...positionConfigs,
-                          {
-                            id: newId,
-                            symbol: selectedPool.symbol,
-                            amount: parseFloat(tradeAmount),
-                            entryPrice: currentPrice,
-                            mineralKey: mineralKey as 'oil' | 'gold' | 'silver'
-                          }
-                        ]);
 
-                        setSelectedPool(null);
-                        setTradeAmount('');
-                        setEstimatedXRP(''); // Reset XRP estimate on successful trade
+                    // Recompute required XRP at purchase time to avoid races
+                    const tradeValue = parseFloat(tradeAmount || '0');
+                    const estimatedUSD = tradeValue * selectedPool.price;
+                    let requiredXrp = 0;
+                    try {
+                      const data = await apiGet(`/api/xrpl/convert-usd?usd=${encodeURIComponent(estimatedUSD)}`);
+                      requiredXrp = Number(data?.xrp ?? 0);
+                    } catch (err) {
+                      console.error('Failed to convert USD to XRP at purchase time', err);
+                      setBuyError('Unable to verify price — try again');
+                      return;
+                    }
+
+                    const walletXrp = parseFloat(xrpBalance || '0');
+                    if (requiredXrp > walletXrp) {
+                      setBuyError('Insufficient XRP balance');
+                      return;
+                    }
+
+                    if (mineralKey && ['oil', 'gold', 'silver'].includes(mineralKey)) {
+                      const currentPrice = getCurrentPrice(typedMockMinerals[mineralKey as 'oil' | 'gold' | 'silver'].priceHistory);
+                      const newId = (Math.max(...positionConfigs.map(p => parseInt(p.id)), 0) + 1).toString();
+                      setPositionConfigs([
+                        ...positionConfigs,
+                        {
+                          id: newId,
+                          symbol: selectedPool.symbol,
+                          amount: parseFloat(tradeAmount),
+                          entryPrice: currentPrice,
+                          mineralKey: mineralKey as 'oil' | 'gold' | 'silver'
+                        }
+                      ]);
+
+                      // Deduct XRP from wallet balance locally and then refresh from backend
+                      const newBalance = walletXrp - requiredXrp;
+                      setXrpBalance(newBalance.toFixed(6));
+                      // Attempt to refresh canonical balance (if transaction was submitted)
+                      try {
+                        await refreshBalance();
+                      } catch {
+                        // ignore — refreshBalance already logs
                       }
+
+                      setSelectedPool(null);
+                      setTradeAmount('');
+                      setEstimatedXRP(''); // Reset XRP estimate on successful trade
+                    }
                   }}
                   disabled={!tradeAmount || !walletConnected || estimatedXRP === 'N/A' || estimatedXRP === ''}
                   className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -458,9 +493,12 @@ export default function TraderView({
                   Cancel
                 </button>
               </div>
-
               {!walletConnected && (
                 <p className="text-xs text-red-600 text-center pt-2">Please connect a wallet to trade</p>
+              )}
+
+              {buyError && (
+                <p className="text-xs text-red-600 text-center pt-2">{buyError}</p>
               )}
             </div>
           </div>

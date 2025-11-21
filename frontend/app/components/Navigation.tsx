@@ -5,12 +5,11 @@ import Link from 'next/link';
 import WalletConnector from './WalletConnector';
 import XRPLWalletModal from './XRPLWalletModal';
 import { useWallet } from '@/app/context/WalletContext';
-import * as xrplService from '../../../apis/src/services/xrplNew';
+import { apiGet } from '@/app/utils/api';
 
 export default function Navigation() {
-  const { isConnected, walletAddress, connectWallet, disconnectWallet } = useWallet();
+  const { isConnected, walletAddress, connectWallet, disconnectWallet, xrpBalance, setXrpBalance } = useWallet();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const [xrpBalance, setXrpBalance] = useState<string | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
 
   const handleConnectWallet = (address: string) => {
@@ -45,7 +44,9 @@ export default function Navigation() {
     const fetchBalance = async () => {
       try {
         setLoadingBalance(true);
-        const balance = await xrplService.getXRPBalance(walletAddress);
+        const data = await apiGet(`/api/xrpl/account/${encodeURIComponent(walletAddress)}`);
+        const drops = Number(data?.account_data?.Balance ?? data?.result?.account_data?.Balance ?? 0);
+        const balance = (drops / 1_000_000).toString();
         setXrpBalance(balance);
       } catch (err) {
         console.error('Failed to fetch XRP balance:', err);
@@ -56,7 +57,7 @@ export default function Navigation() {
     };
 
     fetchBalance();
-  }, [walletAddress]);
+  }, [walletAddress, setXrpBalance]);
 
   return (
     <>
@@ -103,7 +104,7 @@ export default function Navigation() {
                       {loadingBalance ? (
                         <div className="text-emerald-700">⏳ Loading...</div>
                       ) : (
-                        <div className="text-emerald-700 font-medium">Balance: {(xrpBalance ? parseFloat(xrpBalance).toFixed(4) : '0.0000')} XRP</div>
+                          <div className="text-emerald-700 font-medium">Balance: {(xrpBalance ? parseFloat(xrpBalance).toFixed(4) : '0.0000')} XRP</div>
                       )}
                     </div>
                   )}
