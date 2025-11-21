@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import WalletConnector from './WalletConnector';
 import XRPLWalletModal from './XRPLWalletModal';
@@ -17,6 +17,21 @@ export default function Navigation() {
     connectWallet(address);
     setIsWalletModalOpen(false);
   };
+
+  const addressRef = useRef<HTMLDivElement | null>(null);
+  const [showBalanceDropdown, setShowBalanceDropdown] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!addressRef.current) return;
+      const target = e.target as Node;
+      if (!addressRef.current.contains(target)) setShowBalanceDropdown(false);
+    };
+
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
 
   const formatAddress = (address?: string) => {
     if (!address) return 'Invalid';
@@ -45,7 +60,7 @@ export default function Navigation() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 backdrop-blur-md bg-secondary/80 border-b border-default shadow-sm">
+      <nav className="top-0 z-50 backdrop-blur-md bg-secondary/80 border-b border-default shadow-sm relative">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition">
@@ -58,7 +73,7 @@ export default function Navigation() {
               </div>
             </Link>
 
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2">
               <Link href="/markets" className="text-sm font-medium text-secondary hover:text-primary transition">
                 Markets
               </Link>
@@ -72,20 +87,38 @@ export default function Navigation() {
 
             {isConnected && walletAddress ? (
               <div className="flex items-center gap-4">
-                <div className="flex items-center bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
-                  <span className="text-sm font-medium text-emerald-700">{formatAddress(walletAddress)}</span>
+                <div ref={addressRef} className="relative">
+                  <button
+                    onClick={() => setShowBalanceDropdown(prev => !prev)}
+                    className="flex items-center bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2"
+                    aria-expanded={showBalanceDropdown}
+                    aria-haspopup="true"
+                    aria-label="Wallet address and balance"
+                  >
+                    <span className="text-sm font-medium text-emerald-700">{formatAddress(walletAddress)}</span>
+                  </button>
+
+                  {showBalanceDropdown && (
+                    <div className="absolute right-0 mt-2 w-44 bg-white border border-stone-200 rounded-md shadow-md p-3 text-sm z-50">
+                      {loadingBalance ? (
+                        <div className="text-emerald-700">⏳ Loading...</div>
+                      ) : (
+                        <div className="text-emerald-700 font-medium">Balance: {(xrpBalance ? parseFloat(xrpBalance).toFixed(4) : '0.0000')} XRP</div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex items-center bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
+                {/* <div className="flex items-center bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2">
                   {loadingBalance ? (
                     <span className="text-sm text-emerald-700">⏳ Loading...</span>
                   ) : (
                     <span className="text-sm text-emerald-700">{xrpBalance ?? '0'} XRP</span>
                   )}
-                </div>
+                </div> */}
 
                 <button
-                  onClick={disconnectWallet}
+                  onClick={() => { disconnectWallet(); setShowBalanceDropdown(false); }}
                   className="px-4 py-2 text-stone-600 hover:text-stone-900 text-sm font-medium transition"
                 >
                   Disconnect
