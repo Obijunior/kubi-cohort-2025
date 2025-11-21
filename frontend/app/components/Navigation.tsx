@@ -6,6 +6,7 @@ import WalletConnector from './WalletConnector';
 import XRPLWalletModal from './XRPLWalletModal';
 import { useWallet } from '@/app/context/WalletContext';
 import { apiGet } from '@/app/utils/api';
+import * as xrplService from '../../../apis/src/services/xrplNew';
 
 export default function Navigation() {
   const { isConnected, walletAddress, connectWallet, disconnectWallet, xrpBalance, setXrpBalance } = useWallet();
@@ -44,9 +45,7 @@ export default function Navigation() {
     const fetchBalance = async () => {
       try {
         setLoadingBalance(true);
-        const data = await apiGet(`/api/xrpl/account/${encodeURIComponent(walletAddress)}`);
-        const drops = Number(data?.account_data?.Balance ?? data?.result?.account_data?.Balance ?? 0);
-        const balance = (drops / 1_000_000).toString();
+        const balance = await xrplService.getXRPBalance(walletAddress);
         setXrpBalance(balance);
       } catch (err) {
         console.error('Failed to fetch XRP balance:', err);
@@ -57,7 +56,7 @@ export default function Navigation() {
     };
 
     fetchBalance();
-  }, [walletAddress, setXrpBalance]);
+  }, [walletAddress]);
 
   return (
     <>

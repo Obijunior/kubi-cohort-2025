@@ -8,7 +8,7 @@ import type { Wallet } from 'xrpl';
 interface XRPLWalletModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConnect: (address: string) => void; // pass address
+  onConnect: (address: string, seed: string) => void; // Update to pass seed too
 }
 
 export default function XRPLWalletModal({ isOpen, onClose, onConnect }: XRPLWalletModalProps) {
@@ -48,9 +48,9 @@ export default function XRPLWalletModal({ isOpen, onClose, onConnect }: XRPLWall
 
       setSuccess(true);
 
-      // Notify parent with wallet + address
+      // Notify parent with both address and seed
       setTimeout(() => {
-        onConnect(wallet.address);
+        onConnect(wallet.address, seed); // Pass both address and seed
         handleClose();
       }, 1000);
 
