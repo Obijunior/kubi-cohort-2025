@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import xrpl, { Wallet, xrpToDrops } from "xrpl";
+import { createSellOffer, loginWithSeed } from "./xrplNew";
 import { convertUSDtoXRP } from "./xrpPriceService";
 
 dotenv.config();
@@ -201,22 +202,9 @@ app.post("/sell-offer", async (req, res) => {
   const { seed, currency, issuer, tokenAmount, xrpAmount } = req.body;
 
   try {
-    const wallet = login(seed);
-    const c = await getClient();
-
-    const tx: any = {
-      TransactionType: "OfferCreate",
-      Account: wallet.classicAddress,
-      TakerPays: {
-        currency,
-        issuer,
-        value: tokenAmount,
-      },
-      TakerGets: xrpToDrops(xrpAmount),
-    };
-
-    const prepared = await c.autofill(tx as any);
-    const result = await submitAndWait(prepared, wallet);
+    // Use the shared helper which constructs and submits a sell OfferCreate
+    const sellerWallet = loginWithSeed(seed);
+    const result = await createSellOffer(sellerWallet, currency, issuer, String(tokenAmount), String(xrpAmount));
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import WalletConnector from './WalletConnector';
 import XRPLWalletModal from './XRPLWalletModal';
 import { useWallet } from '@/app/context/WalletContext';
-import { apiGet } from '@/app/utils/api';
 import * as xrplService from '../../../apis/src/services/xrplNew';
 
 export default function Navigation() {

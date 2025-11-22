@@ -30,6 +30,7 @@ export type PositionConfig = {
   amount: number;
   entryPrice: number;
   mineralKey: 'oil' | 'gold' | 'silver';
+  issuer?: string;
 };
 
 export default function TradePage() {
@@ -59,14 +60,16 @@ export default function TradePage() {
       symbol: 'WTI',
       amount: 100,
       entryPrice: 55.70,
-      mineralKey: 'oil'
+      mineralKey: 'oil',
+      issuer: 'rPTDemoIssuer1qvPqPYb8rX'
     },
     {
       id: '2',
       symbol: 'XAU',
       amount: 10,
       entryPrice: 4000.50,
-      mineralKey: 'gold'
+      mineralKey: 'gold',
+      issuer: 'rPTDemoIssuer2zK6yQJ9v2M'
     }
   ]);
   const [closedPnL, setClosedPnL] = useState(0);
