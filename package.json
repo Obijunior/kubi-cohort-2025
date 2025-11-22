@@ -1,0 +1,22 @@
+{
+  "name": "kubi-cohort-2025",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "apis"
+  ],
+  "scripts": {
+    "postinstall": "npm --prefix frontend ci && npm --prefix apis ci",
+    "build": "npm run build:frontend",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:apis": "npm --prefix apis run build",
+    "dev": "concurrently \"npm --prefix frontend run dev\" \"npm --prefix apis run dev\"",
+    "start": "npm --prefix frontend run start",
+    "lint": "npm --prefix frontend run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "packageManager": "npm@9"
+}
