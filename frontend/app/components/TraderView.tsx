@@ -4,7 +4,7 @@ import { ArrowUpRight, ArrowDownRight, Search } from 'lucide-react';
 import TradingPoolSection from './TradingPoolSection';
 import { mockMinerals, getCurrentPrice, calculatePriceChange } from '@/app/utils/mockData';
 import type { PositionConfig, CompanyAsset } from '@/app/trade/page';
-import { apiGet } from '@/app/utils/api';
+import { convertUSDtoXRP } from '../../../apis/src/services/xrpPriceService.ts';
 
 type MockMineralEntry = {
   priceHistory: { date: string; price: number; }[];
@@ -124,7 +124,7 @@ export default function TraderView({
       const calculateXRP = async () => {
         const estimatedUSD = tradeValue * selectedPool.price;
         try {
-          const resp = await apiGet(`/api/xrpl/convert-usd?usd=${encodeURIComponent(estimatedUSD)}`);
+          const resp = await convertUSDtoXRP(estimatedUSD);
           const xrpAmount = resp?.xrp ?? 0;
           const formatted = (Number(xrpAmount) || 0).toFixed(6);
           if (!cancelled) setEstimatedXRP(prev => (prev !== formatted ? formatted : prev));
@@ -342,7 +342,7 @@ export default function TraderView({
 
       {/* Trade Modal */}
       {selectedPool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full border border-stone-200 shadow-lg">
             <div className="flex justify-between items-start mb-6">
               <div>
@@ -398,7 +398,7 @@ export default function TraderView({
                     const estimatedUSD = tradeValue * selectedPool.price;
                     let requiredXrp = 0;
                     try {
-                      const resp = await apiGet(`/api/xrpl/convert-usd?usd=${encodeURIComponent(estimatedUSD)}`);
+                      const resp = await convertUSDtoXRP(estimatedUSD);
                       requiredXrp = Number(resp?.xrp ?? 0);
                     } catch (err) {
                       console.error('Failed to convert USD to XRP at purchase time', err);

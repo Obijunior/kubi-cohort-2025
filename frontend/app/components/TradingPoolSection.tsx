@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Users, DollarSign, Info } from 'lucide-react';
-import { apiGet, apiPost } from '@/app/utils/api';
 import type { PositionConfig } from '@/app/trade/page';
 import { useWallet } from '@/app/context/WalletContext';
+import { convertUSDtoXRP } from '../../../apis/src/services/xrpPriceService.ts';
+import { createSellOffer } from '../../../apis/src/services/xrplNew.ts';
 
 type TradingPoolSectionProps = {
   positionConfigs: PositionConfig[];
@@ -68,7 +69,6 @@ export default function TradingPoolSection({ positionConfigs, setPositionConfigs
   const [platformFeeUsd, setPlatformFeeUsd] = useState<number>(0);
   const [youllReceiveUsd, setYoullReceiveUsd] = useState<number>(0);
   const [currentMarketPrice, setCurrentMarketPrice] = useState<number | null>(null);
-  const [suggestedPriceText, setSuggestedPriceText] = useState<string>('');
 
   // Compute fees and suggested/current prices when selected position or inputs change
   useEffect(() => {
@@ -80,7 +80,6 @@ export default function TradingPoolSection({ positionConfigs, setPositionConfigs
     const nextCurrent = pos ? pos.entryPrice : null;
     let nextPlatform = 0;
     let nextYoull = 0;
-    let nextSuggested = '';
 
     if (amt > 0 && price > 0) {
       const totalUsd = amt * price;
@@ -88,12 +87,6 @@ export default function TradingPoolSection({ positionConfigs, setPositionConfigs
       nextPlatform = fee;
       nextYoull = totalUsd - fee;
 
-      if (pos && pos.entryPrice > 0) {
-        const diff = ((price - pos.entryPrice) / pos.entryPrice) * 100;
-        nextSuggested = `${price.toFixed(2)} (${diff >= 0 ? '+' : ''}${diff.toFixed(2)}%)`;
-      } else {
-        nextSuggested = `${price.toFixed(2)}`;
-      }
     }
 
     const tid = window.setTimeout(() => {
@@ -101,7 +94,6 @@ export default function TradingPoolSection({ positionConfigs, setPositionConfigs
       setCurrentMarketPrice(nextCurrent);
       setPlatformFeeUsd(nextPlatform);
       setYoullReceiveUsd(nextYoull);
-      setSuggestedPriceText(nextSuggested);
     }, 0);
 
     return () => {
@@ -145,12 +137,12 @@ export default function TradingPoolSection({ positionConfigs, setPositionConfigs
 
       try {
         const usd = sellAmount * sellPrice;
-        const conv = await apiGet(`/api/xrpl/convert-usd?usd=${encodeURIComponent(usd)}`);
+        const conv = await convertUSDtoXRP(usd);
         const xrpAmount = Number(conv?.xrp ?? 0);
 
         const issuer = (pos as PosWithIssuer).issuer || walletAddress;
 
-        const resp = await apiPost(`/sell-offer`, {
+        const resp = await createSellOffer({
           seed: seedStr,
           currency: pos.symbol,
           issuer,
@@ -237,10 +229,7 @@ export default function TradingPoolSection({ positionConfigs, setPositionConfigs
 
     if (amt > 0 && selectedOrder) {
       const usd = amt * selectedOrder.pricePerToken;
-      apiGet(`/api/xrpl/convert-usd?usd=${encodeURIComponent(usd)}`)
-        .then((data) => {
-          if (!cancelled) setEstimatedXRP(String(data?.xrp ?? ''));
-        })
+      convertUSDtoXRP(usd)
         .catch((err) => {
           console.error('Failed to estimate XRP for purchaseAmount', err);
           if (!cancelled) setEstimatedXRP('N/A');
@@ -502,7 +491,7 @@ export default function TradingPoolSection({ positionConfigs, setPositionConfigs
 
       {/* Buy Order Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full border border-stone-200 shadow-lg">
             <div className="flex justify-between items-start mb-6">
               <div>
@@ -567,7 +556,7 @@ export default function TradingPoolSection({ positionConfigs, setPositionConfigs
                     const estimatedUSD = amt * selectedOrder.pricePerToken;
                     let requiredXrp = 0;
                     try {
-                      const resp = await apiGet(`/api/xrpl/convert-usd?usd=${encodeURIComponent(estimatedUSD)}`);
+                      const resp = await convertUSDtoXRP(estimatedUSD);
                       requiredXrp = Number(resp?.xrp ?? 0);
                     } catch (err) {
                       console.error('Failed to convert USD to XRP at purchase time', err);

@@ -3,25 +3,22 @@ import { mockMinerals, getCurrentPrice } from './mockData';
 const BASE_POOL_CONFIGS = [
   {
     key: 'oil' as const,
-    symbol: 'WTI',
-    name: 'Oil',
-    type: 'Energy',
+    symbol: 'EXX-WTI',
+    name: 'ExxonMobil Oil',
     tradingFee: '0.3%',
     tokensInPool: 100000
   },
   {
     key: 'gold' as const,
-    symbol: 'XAU',
-    name: 'Gold',
-    type: 'Precious Metal',
+    symbol: 'AUR-XAU',
+    name: 'Aurora Gold',
     tradingFee: '0.2%',
     tokensInPool: 10000
   },
   {
     key: 'silver' as const,
-    symbol: 'XAG',
-    name: 'Silver',
-    type: 'Precious Metal',
+    symbol: 'AUR-XAG',
+    name: 'Aurora Silver',
     tradingFee: '0.1%',
     tokensInPool: 20000
   }
